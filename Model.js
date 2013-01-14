@@ -90,8 +90,39 @@ Model = (function () {
       return this._data[ this.constructor.idAttr ] === undefined;
     });
 
-		Class.prototype.get = function () {};
-		Class.prototype.set = function () {};
+		Class.prototype.get = function (attr) {
+      if (!arguments.length) {
+        return $.extend({}, this._data);
+      }
+
+      var i, attrName, attributes = [], data = {};
+
+      for (i = 0; i < arguments.length; i++) {
+        attrName = arguments[i];
+        //console.log(attrName, typeof(attrName), Class.attributes);
+        if (typeof(attrName) != 'string' || Class.attributes.indexOf(attrName) == -1) {
+          throw new ModelError('P01', "Get method should be provided valid attribute names only");
+        }
+        attributes.push(attrName);
+      }
+
+      if (attributes.length == 1) {
+        return this._data[ attributes[0] ];
+      } else {
+        for (i = 0; i < attributes.length; i++) {
+          attrName = attributes[i];
+          data[ attrName ] = this._data[ attrName ];
+        }
+        return data;
+      }
+    };
+
+		Class.prototype.set = function (attrName, value) {
+      if (typeof(attrName) != 'string' || Class.attributes.indexOf(attrName) == -1 || arguments.length != 2) {
+        throw new ModelError('P02', "Set method should be provided two argument and first of them should be a valid string attribute name");
+      }
+      this._data[attrName] = value;
+    };
 
 		Model.classes[name] = Class;
 

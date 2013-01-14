@@ -465,24 +465,43 @@ test("obj.isNew getter should return boolean whether istance has idAttr set or n
 });
 
 test("obj.get method should return actual attribute values", function () {
-	var noteData = { id: 123, title: 'abc', text: 'text' },
+	var noteData = { id: 123, title: 'abc' },
 		note = new Note(noteData);
 
-	ok( note.get('title') === 'abc', "should return single value when one attribute name is passed");
-
-	var ret = note.get('title', 'id');
-	ok( $.isPlainObject(ret), "should return data object if more than one attribute name is passed");
-	ok( objectSize(ret) === 2, "returned data object should have exactly same number of keys as number of attibute arguments passed");
-	ok( ret.id === 123 && ret.title === 'abc', "returned object should have key-value pairs mirroring real attribute names and corresponding values");
+  throws( function () { note.get(null, 1, 2); }, /P01/, "fails when any of provided attribute names is not a string");
+  throws( function () { note.get('slug'); }, /P01/, "fails when any of provided attribute names are not strings");
 
 	var ret = note.get();
-	ok( $.isPlainText(ret), "should return data object if no argument passed");
-	ok( objectSize(ret) === 3, "returned data object should have as many keys as there are attributes in the model");
+	ok( $.isPlainObject(ret), "should return data object if no argument passed");
+	ok( objectSize(ret) === 2, "returned data object should have as many keys as there are attributes in the model");
 	deepEqual( ret, note._data, "returned data object should have key-value pairs mirroring real attribute names and corresponding values");
 	ok( ret !== noteData, "returned data object should not be (by referecence) exactly that object passed to instance constructor");
 	ok( ret !== note._data, "returned data object should not be (by referecence) obj._data");
+
+	ok( note.get('title') === 'abc', "should return single value when one attribute name is passed");
+
+	var ret = note.get('id', 'title');
+	ok( $.isPlainObject(ret), "should return data object if more than one attribute name is passed");
+	ok( objectSize(ret) == 2, "returned data object should have exactly same number of keys as number of attibute arguments passed");
+	ok( ret.id === 123 && ret.title === 'abc', "returned object should have key-value pairs mirroring real attribute names and corresponding values");
 });
 
 test("obj.set method should set new attribute values", function () {
+	var noteData = { id: 123, title: 'abc', text: 'text' },
+		note = new Note(noteData);
+
+	throws( function () { note.set(); }, /P02/, "should fail if no arguemnts provided");
+	throws( function () { note.set('title'); }, /P02/, "should fail if only attribute name provided");
+	throws( function () { note.set('slug', 123); }, /P02/, "should fail if attribute name provided is invalid");
+	ok( note.set('title', 'boom') === undefined, "should return undefined");
+	ok( note.get('title') == 'boom', "should change the value returned afterwards by the get method");
 });
 
+test("obj.data should return actual data stored in a model instance", function () {
+	var noteData = { id: 123, title: 'abc', text: 'text' },
+		note = new Note(noteData);
+
+  deepEqual( note.data, noteData, "should return an object with keys representing model attributes and their values representing attributes' values accordingly");
+  ok( note.data !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
+  ok( note.data !== note._data, "returned object shouldn't be a reference to a private _data property");
+});
