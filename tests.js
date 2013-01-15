@@ -27,6 +27,12 @@ function objectSize(obj) {
 	return size;
 }
 
+function objectKeys(obj) {
+	var keys = [];
+	for (k in obj) keys.push(k);
+	return keys;
+}
+
 
 
 test("Model.errCodes should be there", function () {
@@ -464,6 +470,12 @@ test("obj.isNew getter should return boolean whether istance has idAttr set or n
 	ok( note.isNew, 'returns true if idAttr is NOT set');
 });
 
+test("obj._get method should return actual attribute value if it is set", function () {
+});
+
+test("obj._set method should set a value of an attribute", function () {
+});
+
 test("obj.get method should return actual attribute values", function () {
 	var noteData = { id: 123, title: 'abc' },
 		note = new Note(noteData);
@@ -501,7 +513,20 @@ test("obj.data should return actual data stored in a model instance", function (
 	var noteData = { id: 123, title: 'abc', text: 'text' },
 		note = new Note(noteData);
 
-  deepEqual( note.data, noteData, "should return an object with keys representing model attributes and their values representing attributes' values accordingly");
-  ok( note.data !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
   ok( note.data !== note._data, "returned object shouldn't be a reference to a private _data property");
+  ok( note.data !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
+  equal( objectKeys(note.data), Note.attributes, "keys in returned object should be same as Class attributes");
 });
+
+
+/*
+var Data = function () {
+  this.qwe = 1;
+  this.asd = 2;
+}
+Data.prototype.__defineGetter__('abc', function () { return 3;});
+Data.prototype.__defineGetter__('def', function () {});
+
+var data = new Data;
+console.log(data);
+*/

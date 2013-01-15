@@ -9,6 +9,7 @@ Model = (function () {
 		return this.code + ': ' + this.message;
 	}
 
+
 	function Model(name, options) {
 		if (this.constructor != Model) {
 			throw new ModelError('M01', 'new Model classes should be created with keyword `new`!');
@@ -30,7 +31,7 @@ Model = (function () {
 			throw new ModelError('M04', "new model's options should contain nonempty attributes array!");
 		}
 
-		var i, j,
+		var i, j, attrName,
 		  attrNotation,
 			attrDescribed,
 		  attributesDescribed = [],
@@ -57,20 +58,22 @@ Model = (function () {
 
 		function Class() {
       if (this.constructor != Class) {
-        throw new ModelError('C01', "Class instances should be created with keyword `new`");
+        throw new ModelError('C01', "Class instances should be created with keyword `new`!");
       }
 
-      var obj = this, data;
+      var obj = this, data, attrName;
 
       if (arguments[0] !== undefined && !$.isPlainObject(arguments[0])) {
-        throw new ModelError('C02', "Class instance should receive data object on creation");
+        throw new ModelError('C02', "Class instance should receive data object on creation!");
       }
 
       data = arguments[0] || {};
       obj._data = {};
 
-      for (var attrName in data) {
-        if (Class.attributes.indexOf(attrName) >= 0) obj._data[attrName] = data[attrName];
+      for (attrName in data) {
+        if (Class.attributes.indexOf(attrName) >= 0) {
+          obj._set(attrName, data[attrName]);
+        }
       }
 		}
 
@@ -80,15 +83,48 @@ Model = (function () {
 		Class._validators = {};
 
 		for (i = 0; i < attributesDescribed.length; i++) {
-		  Class.attributes.push( attributesDescribed[i].attrName );
-		  Class._validators[ attributesDescribed[i].attrName ] = $.extend([], attributesDescribed[i].validators );
+      attrName = attributesDescribed[i].attrName;
+		  Class.attributes.push( attrName );
+		  Class._validators[ attrName ] = $.extend([], attributesDescribed[i].validators);
 		}
 
 		Class.idAttr = Class.attributes[0];
 
+
+    Class.Data = function (instance) {
+      this._instance = instance;
+    }
+
+		for (i = 0; i < Class.attributes.length; i++) {
+      attrName = Class.attributes[i];
+		  Class.Data.prototype.__defineGetter__(attrName, function () {
+        return this._instance._get(attrName);
+      });
+		  Class.Data.prototype.__defineSetter__(attrName, function (value) {
+        this._instance._set(attrName, value);
+      });
+		}
+
+
+
+    Class.prototype.__defineGetter__('data', function () {
+      return new this.constructor.Data(this);
+    });
+
+    Class.prototype.__defineSetter__('data', function (data) {
+    });
+
     Class.prototype.__defineGetter__('isNew', function () {
       return this._data[ this.constructor.idAttr ] === undefined;
     });
+
+    Class.prototype._get = function (attrName) {
+      return this._data[attrName];
+    }
+
+    Class.prototype._set = function (attrName, value) {
+      this._data[attrName] = value;
+    }
 
 		Class.prototype.get = function (attr) {
       if (!arguments.length) {
@@ -121,7 +157,7 @@ Model = (function () {
       if (typeof(attrName) != 'string' || Class.attributes.indexOf(attrName) == -1 || arguments.length != 2) {
         throw new ModelError('P02', "Set method should be provided two argument and first of them should be a valid string attribute name");
       }
-      this._data[attrName] = value;
+      this._set(attrName, value);
     };
 
 		Model.classes[name] = Class;
@@ -201,187 +237,3 @@ Model = (function () {
 	return Model;
 
 })();
-
-
-
-
-
-
-
-
-/*
-function Model() {
-
-  function Class() {
-    if (this.constructor != Class) {
-      return Model.find.apply(Class, arguments);
-    }
-
-    var obj = this,
-      data = arguments[0] || {};
-
-    obj._errors = [];
-    obj._data = {};
-    obj._changed = {};
-
-    _(data).each(function (value, attr) {
-      if (_(Class._attributes).include(attr)) obj._data[attr] = value;
-    });
-
-    if (obj._data[ Class.idAttr ]) this._register();
-  }
-
-  Class.errCodes = {};  // Should be filled with custom error codes.
-  Class._byId = {};
-  Class._validators = {};
-
-
-  Class.validate = function (attr, fn) {
-    Model.registerValidator.apply(this, arguments);
-    return this;
-  }
-
-//  Class.method('_register', function () {
-//    // NOTE _register is not checking whether it can actually register.
-//    Class._byId[this._id] = this;
-//  });
-
-//  Class.method('_unregister', function () {
-//    delete Model._byId[this._id];
-//  });
-
-  Class.getter('isValid', function () {
-    if (this.hasChanged) this.validate();
-    return _.size(this._errors) === 0;
-  });
-
-  Class.getter('errors', function () {
-    if (this.hasChanged) this.validate();
-    return this._errors;
-  });
-
-  Class.getter('hasChanged', function () {
-    return _.size(this._changed) > 0;
-  });
-
-  Class.getter('dataCopy', function () {
-    return $.extend(true, {}, this._data);
-  });
-
-  Class.method('validate', function () {
-    this._errors = Model.validate(this);
-  });
-
-  Class.method('revert', function () {
-    var obj = this,
-      changes = $.extend(true, {}, obj._changed);
-    $.extend(true, obj._data, obj.changed);
-    obj._changed = {};
-    $(obj).trigger('revert', changes);
-  });
-
-  Class.method('remain', function () {
-    var obj = this,
-      changes = $.extend(true, {}, obj._changed);
-    obj._changed = {};
-    $(obj).trigger('changed', changes);
-  });
-
-  Class.method('destroy', function () {
-    var obj = this;
-    delete Model._byCid[obj.cid];
-    delete Class._byId[obj._id];
-    $(obj).trigger('destroy');
-  });
-
-  Class.getter('_id', function () {
-    return this._data[Class.idAttr];
-  });
-
-  Class.setter('_id', function (value) {
-    return this._data[Class.idAttr] = value;
-  });
-
-  Class.getter('isNew', function () {
-    return !this._id;
-  });
-
-  _(Class._attributes).each(function (attr) {
-    Class.getter(attr, function () {
-      return this._data[attr];
-    });
-    Class.setter(attr, function (value) {
-      if (this._data[attr] != value && this._changed[attr] === undefined) {
-        this._changed[attr] = this._data[attr];
-      }
-      this._data[attr] = value;
-    });
-  });
-
-  _(validators).each(function (validatorNames, attr) {
-    _(validatorNames).each(function (name) {
-      Class.validate(attr, Model.validators[name]);
-    });
-  });
-
-  return Class;
-}
-
-Model.reservedWords = "cid isNew isValid errors validate revert dataCopy".split(" ");
-
-Model.find = function () {
-  var cls = this,
-    obj, id, cid,
-    arg0 = arguments[0],
-    shout = !!arguments[1];
-
-  if (arguments.length == 0) {
-    return cls.all();
-  }
-
-  if (typeof(arg0) === 'string' && arg0[0] === '#') {
-    cid = arg0;
-    obj = Model._byCid[cid];
-  } else if (typeof(arg0) === 'number' || typeof(arg0) === 'string') {
-    id = arg0;
-    obj = cls._byId[id];
-  } else {
-    obj = null;
-  }
-
-  if (obj === undefined && shout) {
-    if (id)
-      throw "No `"+type+"` object found by id `"+id+"`!";
-    else if (cid)
-      throw "No `"+type+"` object found by cid `"+cid+"`!";
-  }
-
-  return obj;
-}
-
-Model.validate = function (obj) {
-  var cls = obj.constructor,
-    isNew = obj.isNew,
-    errors = [];
-
-  _(cls._attributes).each(function (attr) {
-    if (!cls._validators[attr]) return;
-    if (attr == cls.idAttr && isNew) return;
-    _(cls._validators[attr]).each(function (validator) {
-      var err = validator(obj._data[attr]);
-      if (err) errors.push([ attr, err ]);
-    });
-  });
-
-  if (cls._validators[null]) {
-    _(cls._validators[null]).each(function (validator) {
-      var err = validator(obj._data);
-      if (err) errors.push([ null, err ]);
-    });
-  }
-
-  return errors;
-}
-
-
-*/
