@@ -509,13 +509,16 @@ test("obj.set method should set new attribute values", function () {
   ok( note.get('title') == 'boom', "should change the value returned afterwards by the get method");
 });
 
-test("obj.data should return actual data stored in a model instance", function () {
+
+test("obj.data() should return actual data stored in a model instance", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
-  ok( note.data !== note._data, "returned object shouldn't be a reference to a private _data property");
-  ok( note.data !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
-  equal( objectKeys(note.data), Note.attributes, "keys in returned object should be same as Class attributes");
+  ok( typeof note.data == 'function', "returned object should be a function");
+  ok( note.data() !== note._data, "returned object shouldn't be a reference to a private _data property");
+  ok( note.data() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
+
+  deepEqual( objectKeys(note.data()), Note.attributes, "keys in returned object should be same as Class attributes");
 });
 
 

@@ -56,25 +56,36 @@ Model = (function () {
     }
 
 
+    var DataFunctionPrototype = {};
+
     function Class() {
       if (this.constructor != Class) {
         throw new ModelError('C01', "Class instances should be created with keyword `new`!");
       }
 
-      var obj = this, data, attrName;
+      var instance = this, data, attrName;
 
       if (arguments[0] !== undefined && !$.isPlainObject(arguments[0])) {
         throw new ModelError('C02', "Class instance should receive data object on creation!");
       }
 
       data = arguments[0] || {};
-      obj._data = {};
+      instance._data = {};
 
       for (attrName in data) {
         if (Class.attributes.indexOf(attrName) >= 0) {
-          obj._set(attrName, data[attrName]);
+          instance._set(attrName, data[attrName]);
         }
       }
+
+      var fn = function () {
+        if (arguments.length == 1 && arguments[0] === undefined) return instance;
+        return $.extend({}, instance._data);
+      }
+
+      fn.prototype = fn.__proto__ = DataFunctionPrototype;
+
+      instance._data2 = fn;
     }
 
     Class.className = name;
@@ -91,24 +102,22 @@ Model = (function () {
     Class.idAttr = Class.attributes[0];
 
 
-    Class.Data = function (instance) {
-      this._instance = instance;
+    for (var i = 0; i < Class.attributes.length; i++) {
+      (function (attrName) {
+        DataFunctionPrototype.__defineGetter__(attrName, function () {
+          var instance = this(undefined);
+          return instance._get(attrName);
+        });
+        DataFunctionPrototype.__defineSetter__(attrName, function (value) {
+          var instance = this(undefined);
+          instance._set(attrName, value);
+        });
+      })(Class.attributes[i]);
     }
-
-    for (i = 0; i < Class.attributes.length; i++) {
-      attrName = Class.attributes[i];
-      Class.Data.prototype.__defineGetter__(attrName, function () {
-        return this._instance._get(attrName);
-      });
-      Class.Data.prototype.__defineSetter__(attrName, function (value) {
-        this._instance._set(attrName, value);
-      });
-    }
-
 
 
     Class.prototype.__defineGetter__('data', function () {
-      return new this.constructor.Data(this);
+      return this._data2;
     });
 
     Class.prototype.__defineSetter__('data', function (data) {
