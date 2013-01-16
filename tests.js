@@ -48,25 +48,27 @@ test("Model.classes should be there", function () {
 
 test("Model._validators should be ready", function () {
   ok( Model._validators['string'], 'string validator exists' );
-  ok( Model._validators['string']('123') == null, 'string validator returns no errCode having received string argument' );
+  ok( Model._validators['string']('123') === undefined, 'string validator returns no errCode having received string argument' );
   ok( Model._validators['string'](123) === Model.errCodes.WRONG_TYPE, 'string validator returns WRONG_TYPE errCode having received non-string argument' );
 
   ok( Model._validators['number'], 'number validator exists' );
-  ok( Model._validators['number'](123) == null, 'number validator returns no errCode having received number argument' );
+  ok( Model._validators['number'](123) === undefined, 'number validator returns no errCode having received number argument' );
   ok( Model._validators['number']('123') === Model.errCodes.WRONG_TYPE, 'number validator returns WRONG_TYPE errCode having received non-number argument' );
 
   ok( Model._validators['boolean'], 'boolean validator exists' );
-  ok( Model._validators['boolean'](true) == null, 'boolean validator returns no errCode having received boolean true argument' );
-  ok( Model._validators['boolean'](false) == null, 'boolean validator returns no errCode having received boolean false argument' );
-  ok( Model._validators['boolean'](123) === Model.errCodes.WRONG_TYPE, 'boolean validator returns WRONG_TYPE errCode having received non-boolean argument' );
+  ok( Model._validators['boolean'](true) === undefined, 'boolean validator returns no errCode having received boolean true argument' );
+  ok( Model._validators['boolean'](false) === undefined, 'boolean validator returns no errCode having received boolean false argument' );
+  ok( Model._validators['boolean'](123) === Model.errCodes.WRONG_TYPE, 'boolean validator returns WRONG_TYPE errCode having received a number' );
+  ok( Model._validators['boolean'](null) === Model.errCodes.WRONG_TYPE, 'boolean validator returns WRONG_TYPE errCode having received null' );
+  ok( Model._validators['boolean']('str') === Model.errCodes.WRONG_TYPE, 'boolean validator returns WRONG_TYPE errCode having received a string' );
 
   ok( Model._validators['nonnull'], 'nonnull validator exists' );
-  ok( Model._validators['nonnull'](0) == null, 'nonnull validator returns no errCode having received nonnull argument' );
+  ok( Model._validators['nonnull'](0) === undefined, 'nonnull validator returns no errCode having received nonnull argument' );
   ok( Model._validators['nonnull'](null) === Model.errCodes.NULL, 'nonnull validator returns NULL errCode having received null argument' );
 
   ok( Model._validators['nonempty'], 'nonempty validator exists' );
-  ok( Model._validators['nonempty'](0) == null, 'nonempty validator returns no errCode having received non-string argument' );
-  ok( Model._validators['nonempty']('abc') == null, 'nonempty validator returns no errCode having received non-empty string argument' );
+  ok( Model._validators['nonempty'](0) === undefined, 'nonempty validator returns no errCode having received non-string argument' );
+  ok( Model._validators['nonempty']('abc') === undefined, 'nonempty validator returns no errCode having received non-empty string argument' );
   ok( Model._validators['nonempty']('') === Model.errCodes.EMPTY, 'nonempty validator returns EMPTY errCode having received empty string argument' );
 });
 
@@ -562,7 +564,7 @@ test("obj.data should also contain setters for all attributes", function () {
 });
 
 //!
-test("obj.data= should be a setter for the instance to set multiple attribute values in the other way", function () {
+  test("obj.data= should be a setter for the instance to set multiple attribute values in the other way", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
