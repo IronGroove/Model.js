@@ -76,18 +76,57 @@ Model = (function () {
           "Class instances should be created with keyword `new`!");
       }
 
-      var instance = this,
-        dataFn,
-        data;
+      var instance = this, persistanceFlag, data, dataFn;
 
-      if (arguments[0] !== undefined && !$.isPlainObject(arguments[0])) {
-        throw new ModelError('C02',
-          "Class instance should receive data object on creation!");
+      if (arguments.length == 0) {
+        data = {};
       }
 
-      data = arguments[0] || {};
+      else if (arguments.length == 1) {
+        if (typeof(arguments[0]) == 'boolean') {
+          persistanceFlag = arguments[0];
+          data = {};
+        }
+        else if ($.isPlainObject(arguments[0])) {
+          data = arguments[0];
+        }
+        else {
+          throw new ModelError('C02',
+            "when a Class constructor receives one argument, "+
+            "it should be either a boolean persistance flag or a data object!");
+        }
+      }
+
+      else if (arguments.length == 2) {
+        if (typeof(arguments[0]) == 'boolean' && $.isPlainObject(arguments[1])) {
+          persistanceFlag = arguments[0];
+          data = arguments[1];
+        }
+        else {
+          throw new ModelError('C03',
+            "when a Class constructor receives two arguments, "+
+            "they should be a boolean persistance flag and a data object!");
+        }
+      }
+
+      else {
+        throw new ModelError('C04',
+          "a Class constructor should be provided no more than 2 arguments!");
+      }
+
+
       instance._data = {};
       instance._changes = {};
+
+      instance._isPersisted =
+        typeof(persistanceFlag) == 'boolean' &&
+          persistanceFlag ||
+            !!data[Class.idAttr];
+
+      if (instance._isPersisted && !data[Class.idAttr]) {
+        throw new ModelError('C05',
+          "instance cannot be explicitly persisted on creation if it has no id attribute set!");
+      }
 
       for (var attrName in data) {
         if (Class.attributes.indexOf(attrName) >= 0) {
@@ -167,34 +206,34 @@ Model = (function () {
 
     Class.prototype.get = function (attr) {
       if (!arguments.length) {
-        return $.extend({}, this._data);
+        return this.data();
       }
 
-      var i, attrName, attributes = [], data = {};
-
-      for (i = 0; i < arguments.length; i++) {
-        attrName = arguments[i];
-        //console.log(attrName, typeof(attrName), Class.attributes);
-        if (typeof(attrName) != 'string' || Class.attributes.indexOf(attrName) == -1) {
-          throw new ModelError('P01', "Get method should be provided valid attribute names only");
+      for (var i = 0; i < arguments.length; i++) {
+        if (typeof(arguments[i]) != 'string' ||
+              Class.attributes.indexOf(arguments[i]) == -1) {
+          throw new ModelError('P01',
+            "Get method should be provided valid attribute names only!");
         }
-        attributes.push(attrName);
       }
 
-      if (attributes.length == 1) {
-        return this._data[ attributes[0] ];
-      } else {
-        for (i = 0; i < attributes.length; i++) {
-          attrName = attributes[i];
-          data[ attrName ] = this._data[ attrName ];
-        }
-        return data;
+      if (arguments.length == 1) {
+        return this._get(attr);
       }
+
+      var data = {}; for (var i = 0; i < arguments.length; i++) {
+        data[ arguments[i] ] = this._data[ arguments[i] ];
+      }
+
+      return data;
     };
 
     Class.prototype.set = function (attrName, value) {
-      if (typeof(attrName) != 'string' || Class.attributes.indexOf(attrName) == -1 || arguments.length != 2) {
-        throw new ModelError('P02', "Set method should be provided two argument and first of them should be a valid string attribute name");
+      if (typeof(attrName) != 'string' ||
+            Class.attributes.indexOf(attrName) == -1 ||
+              arguments.length != 2) {
+        throw new ModelError('P02',
+          "Set method should be provided two argument and first of them should be a valid string attribute name!");
       }
       this._set(attrName, value);
     };
@@ -204,7 +243,6 @@ Model = (function () {
     return Class;
   }
 
-  Model._validators = {};
 
   Model._parseAttributeNotation = function (attrNotation) {
     var attrName, validators = [], matches, i, validatorsRaw;
@@ -245,12 +283,15 @@ Model = (function () {
     Model._validators[name] = validatorFn;
   };
 
+
   Model.classes = {};
 
   Model.errCodes = {};
   Model.errCodes.WRONG_TYPE = 'wrongtype';
   Model.errCodes.NULL = 'null';
   Model.errCodes.EMPTY = 'empty';
+
+  Model._validators = {};
 
   Model.registerValidator('number', function (value) {
     if (typeof(value) !== 'number') return Model.errCodes.WRONG_TYPE;

@@ -51,6 +51,10 @@ note.bind('rollback', handler);
 
 */
 
+
+
+
+
 function objectSize(obj) {
   var size = 0;
   for (var k in obj) if (obj.hasOwnProperty(k)) size ++;
@@ -65,22 +69,28 @@ function objectKeys(obj) {
 
 
 
-test("Model.errCodes should be there", function () {
+
+
+test("Model.classes should be there", function () {
+  ok( $.isPlainObject(Model.classes) );
+});
+
+
+module("Model validators");
+
+test("Model.errCodes (3) should be there", function () {
   ok( Model.errCodes,            'Model.errCodes'            );
   ok( Model.errCodes.WRONG_TYPE, 'Model.errCodes.WRONG_TYPE' );
   ok( Model.errCodes.NULL,       'Model.errCodes.NULL'       );
   ok( Model.errCodes.EMPTY,      'Model.errCodes.EMPTY'      );
 });
 
-test("Model.classes should be there", function () {
-  ok( $.isPlainObject(Model.classes) );
-});
-
-test("Model._validators should be ready", function () {
+test("Model._validators (5) should be registered", function () {
   ok( Model._validators['string'], 'string validator exists' );
   ok( Model._validators['string']('123') === undefined, 'string validator returns no errCode having received string argument' );
   ok( Model._validators['string'](123) === Model.errCodes.WRONG_TYPE, 'string validator returns WRONG_TYPE errCode having received non-string argument' );
 
+  //! What about float numbers?
   ok( Model._validators['number'], 'number validator exists' );
   ok( Model._validators['number'](123) === undefined, 'number validator returns no errCode having received number argument' );
   ok( Model._validators['number']('123') === Model.errCodes.WRONG_TYPE, 'number validator returns WRONG_TYPE errCode having received non-number argument' );
@@ -234,7 +244,7 @@ test("returns result if provided notation is valid", function () {
   deepEqual( parsed[5].validators, [ 'unknown' ] );
 });
 
-test("trimmed provided notation is or not, it does not affect the result", function () {
+test("trimmed provided notation or not, it does not affect the result", function () {
   ok( Model._parseAttributeNotation(' [id] ')            );
   ok( Model._parseAttributeNotation(' [id] number ')     );
   ok( Model._parseAttributeNotation(' [id] number nil ') );
@@ -251,11 +261,11 @@ module("Class creation", {
   }
 });
 
-test( "fails without keyword `new`", function () {
+test("fails without keyword `new`", function () {
   throws(function () { var Note = Model(); }, /M01/ );
 });
 
-test( "fails unless 1st argument is a string", function () {
+test("fails unless 1st argument is a string", function () {
   throws(function () { var Note = new Model(); },         /M02/, 'fails if 1st argument is not specified');
   throws(function () { var Note = new Model(null); },     /M02/, 'fails if 1st argument is null');
   throws(function () { var Note = new Model(1234); },     /M02/, 'fails if 1st argument is number');
@@ -266,7 +276,7 @@ test( "fails unless 1st argument is a string", function () {
   throws(function () { var Note = new Model('string'); }, /M03/, 'passes if 1st argument is string');
 });
 
-test( "fails unless 2nd argument is not a plain object", function () {
+test("fails unless 2nd argument is not a plain object", function () {
   throws(function () { var Note = new Model('Note'); },           /M03/, 'fails if 2nd argument is not specified');
   throws(function () { var Note = new Model('Note', null); },     /M03/, 'fails if 2nd argument is null');
   throws(function () { var Note = new Model('Note', 1234); },     /M03/, 'fails if 2nd argument is number');
@@ -278,7 +288,7 @@ test( "fails unless 2nd argument is not a plain object", function () {
   throws(function () { var Note = new Model('Note', {}); },       /M04/, 'passes if 2nd argument is a plain object');
 });
 
-test( "fails if options contain no attributes array", function () {
+test("fails if options contain no attributes array", function () {
   throws(function () { var Note = new Model('Note', {}); },                       /M04/, 'fails if attributes omitted');
   throws(function () { var Note = new Model('Note', { attributes: null }); },     /M04/, 'fails if attributes is null');
   throws(function () { var Note = new Model('Note', { attributes: 1234 }); },     /M04/, 'fails if attributes is number');
@@ -345,10 +355,9 @@ test("class knows its name and Model remembers created class by its name", funct
 
   ok( Note.className == 'Note');
   ok( Post.className == 'Post');
+  ok( objectSize(Model.classes) == 2 );
   ok( Model.classes.Note == Note );
   ok( Model.classes.Post == Post );
-
-  ok( objectSize(Model.classes) == 2 );
 });
 
 
@@ -388,7 +397,7 @@ test("Class.attributes should contain array of declared instance attribute names
   deepEqual( Post.attributes, [ 'slug', 'title', 'body' ]);
 });
 
-test("Class.validators should be a map of attrName to validators", function () {
+test("Class._validators should be a map of attrName to validators", function () {
   var Note = new Model('Note', {
       attributes: [
         '[id] nonnull number',
@@ -418,6 +427,14 @@ test("Class.idAttr is first attribute declared", function () {
 });
 
 
+/*
+// Few examples on instances which need to be created with ids known in advance.
+new Note({…})                  // not persisted:  isNew == true   isChanged == false  isPersisted=false
+new Note({ id: 123, …})        // persisted:      isNew == false  isChanged == false  isPersisted=true
+new Note(true, {…})            // fails
+new Note(false, { id: 123, …}) // not persisted:  isNew == true   isChanged == false  isPersisted=false
+*/
+
 module("Instance creation", {
   setup: function () {
     Note = new Model('Note', {
@@ -434,24 +451,50 @@ module("Instance creation", {
 });
 
 test("should fail if created without `new` keyword", function () {
-  throws( function () {
-    var note = Note();
-  },
-  /C01/,
-  'throws exception without `new`' );
-
+  throws( function () { var note = Note(); }, /C01/, 'throws exception without `new`' );
   var note = new Note();
   ok( true, 'passes with `new`');
 });
 
-test("should fail if provided no data object (nothing considered empty data object)", function () {
-  throws( function () { var note = new Note('abc');  }, /C02/, 'fails when provided a string' );
-  throws( function () { var note = new Note(12345);  }, /C02/, 'fails when provided a number' );
-  throws( function () { var note = new Note(false);  }, /C02/, 'fails when provided a boolean false' );
-  throws( function () { var note = new Note(true);  }, /C02/, 'fails when provided a boolean true' );
-
+test("shouldn't fail if receives nothing", function () {
   var note = new Note;
   ok( true, 'passes when provided nothing');
+});
+
+test("should fail if Class constructor is passed 1 argument and it is neither boolean, nor data object", function () {
+  throws( function () { var note = new Note('abc'); }, /C02/, 'fails when receives a string' );
+  throws( function () { var note = new Note(12345); }, /C02/, 'fails when receives a number' );
+  throws( function () { var note = new Note([]); },    /C02/, 'fails when receives an array' );
+  throws( function () { var note = new Note(null);  }, /C02/, 'fails when receives null' );
+  throws( function () { var note = new Note(undefined);  }, /C02/, 'fails when receives explicit undefined' );
+  throws( function () { var note = new Note(/re/);  }, /C02/, 'fails when receives a regexp' );
+
+  var note = new Note(false);
+  ok( true, 'passes when receives false');
+
+  var note = new Note({});
+  ok( true, 'passes when receives a plain object');
+});
+
+test("should fail if receives 2 arguments and they are not a boolean with a plain object data", function () {
+  throws( function () { var note = new Note('abc', {}); },     /C03/, 'fails if first argument is not boolean' );
+  throws( function () { var note = new Note(true, 'abc'); },   /C03/, 'fails if second argument is not a plain object' );
+
+  var note = new Note(false, {});
+  ok( true, 'passes when 1st arg is boolean and second is plain object');
+});
+
+test("should fail if given more than 2 arguments", function () {
+  throws( function () { var note = new Note(true, { title: "String" }, 1); }, /C04/, 'fails when 2 first arguments are correct and provided any 3rd argument' );
+});
+
+test("should fail if explicit persistance flag is true and no idAttr value is provided in data obj", function () {
+  throws(function () { var note = new Note(true, { title: 'abc'}); }, /C05/);
+  throws(function () { var note = new Note(true); },                  /C05/);
+  throws(function () { var note = new Note(true, {}); },              /C05/);
+
+  var note = new Note(true, { id: 1212 });
+  ok( true );
 });
 
 test("obj._data should become populated with data provided on creation", function () {
@@ -471,10 +514,9 @@ test("obj._data should become populated with data provided on creation", functio
   note = new Note({ title: "abc" });
   deepEqual( note._data, { title: "abc" }, 'values for existing attributes get coppied #2: one attr missing');
 
-  note = new Note({ title: "abc" });
+  note = new Note({ title: "abc", slug: "aabbcc" });
   deepEqual( note._data, { title: "abc" }, 'values for existing attributes get coppied #3: one attr missing, one unexisting provided');
 });
-
 
 
 module("Instance methods", {
@@ -506,8 +548,21 @@ test("obj._get method should return actual attribute value if it is set", functi
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
 
+  ok( note._data.id === 123 );
+  ok( note._data.title === 'abc' );
   ok( note._get('id') === 123 );
   ok( note._get('title') === 'abc' );
+});
+
+test("obj.data() should return actual data stored in a model instance", function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  ok( typeof note.data == 'function', "returned object should be a function");
+  ok( note.data() !== note._data, "returned object shouldn't be a reference to a private _data property");
+  ok( note.data() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
+
+  deepEqual( objectKeys(note.data()), Note.attributes, "keys in returned object should be same as Class attributes");
 });
 
 test("obj._set method should set a value of an attribute", function () {
@@ -515,7 +570,7 @@ test("obj._set method should set a value of an attribute", function () {
     note = new Note(noteData);
 
   ok( note._set('title', 'new') === undefined, "_set should return nothing");
-  ok( note._get('title') === 'new', "should have changed the attribute value" );
+  ok( note._data.title === 'new' );
 });
 
 test("obj.get method should return actual attribute values", function () {
@@ -552,16 +607,6 @@ test("obj.set method should set new attribute values", function () {
 });
 
 
-test("obj.data() should return actual data stored in a model instance", function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  ok( typeof note.data == 'function', "returned object should be a function");
-  ok( note.data() !== note._data, "returned object shouldn't be a reference to a private _data property");
-  ok( note.data() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
-
-  deepEqual( objectKeys(note.data()), Note.attributes, "keys in returned object should be same as Class attributes");
-});
 
 
 //!
@@ -581,7 +626,6 @@ test("obj.data should be iterable and contain getters for all attributes", funct
   ok( note.data.title === 'abc');
 });
 
-//!
 test("obj.data should also contain setters for all attributes", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
@@ -593,15 +637,11 @@ test("obj.data should also contain setters for all attributes", function () {
   ok( note.data.title === 'new');
 });
 
-//!
-  test("obj.data= should be a setter for the instance to set multiple attribute values in the other way", function () {
+test("obj.data= should be a setter for the instance to set multiple attribute values in the other way", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
-  note.data = {
-    id: 321,
-    title: "new"
-  };
+  note.data = { id: 321, title: "new" };
 
   ok( note.data.id === 321 );
   ok( note.data.title === 'new' );
