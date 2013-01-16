@@ -12,23 +12,28 @@ Model = (function () {
 
   function Model(name, options) {
     if (this.constructor != Model) {
-      throw new ModelError('M01', 'new Model classes should be created with keyword `new`!');
+      throw new ModelError('M01',
+        "new Model classes should be created with keyword `new`!");
     }
 
     if (typeof name != 'string') {
-      throw new ModelError('M02', '`new Model` expects its 1st argument to be a string name of a new class!');
+      throw new ModelError('M02',
+        "`new Model` expects its 1st argument to be a string name of a new class!");
     }
 
     if (Model.classes[name]) {
-      throw new ModelError('M07', 'models class with that name already exists!');
+      throw new ModelError('M07',
+        'models class with that name already exists!');
     }
 
     if (!$.isPlainObject(options)) {
-      throw new ModelError('M03', '`new Model` expects its 2nd argument to be an options object!');
+      throw new ModelError('M03',
+        "`new Model` expects its 2nd argument to be an options object!");
     }
 
     if (!options.attributes || options.attributes.constructor.name !== 'Array' || options.attributes.length === 0) {
-      throw new ModelError('M04', "new model's options should contain nonempty attributes array!");
+      throw new ModelError('M04',
+        "new model's options should contain nonempty attributes array!");
     }
 
     var i, j, attrName,
@@ -41,7 +46,8 @@ Model = (function () {
       attrNotation = options.attributes[i];
       attrDescribed = Model._parseAttributeNotation(attrNotation);
       if (attrDescribed === false) {
-        throw new ModelError('M05', "attributes should be valid notation strings!");
+        throw new ModelError('M05',
+          "attributes should be valid notation strings!");
       }
       attributesDescribed.push( attrDescribed );
     }
@@ -50,7 +56,8 @@ Model = (function () {
       attrDescribed = attributesDescribed[i];
       for (j = 0; j < attrDescribed.validators.length; j++) {
         if (!Model._validators[attrDescribed.validators[j]]) {
-          throw new ModelError('M06', "attributes should be described with existing validators!");
+          throw new ModelError('M06',
+            "attributes should be described with existing validators!");
         }
       }
     }
@@ -59,14 +66,20 @@ Model = (function () {
     var DataFunctionPrototype = {};
 
     function Class() {
+
       if (this.constructor != Class) {
-        throw new ModelError('C01', "Class instances should be created with keyword `new`!");
+        throw new ModelError('C01',
+          "Class instances should be created with keyword `new`!");
       }
 
-      var instance = this, data, attrName;
+      var instance = this,
+        dataFn,
+        data,
+        attrName;
 
       if (arguments[0] !== undefined && !$.isPlainObject(arguments[0])) {
-        throw new ModelError('C02', "Class instance should receive data object on creation!");
+        throw new ModelError('C02',
+          "Class instance should receive data object on creation!");
       }
 
       data = arguments[0] || {};
@@ -78,15 +91,14 @@ Model = (function () {
         }
       }
 
-      var fn = function () {
+      instance._data2 = dataFn = function () {
         if (arguments.length == 1 && arguments[0] === undefined) return instance;
         return $.extend({}, instance._data);
       }
 
-      fn.prototype = fn.__proto__ = DataFunctionPrototype;
-
-      instance._data2 = fn;
+      dataFn.prototype = dataFn.__proto__ = DataFunctionPrototype;
     }
+
 
     Class.className = name;
 
@@ -121,6 +133,17 @@ Model = (function () {
     });
 
     Class.prototype.__defineSetter__('data', function (data) {
+      if (!$.isPlainObject(data)) {
+        throw new ModelError('C03',
+          "instance.data= setter accepts plain objects only!");
+      }
+
+      var instance = this;
+      for (var attrName in data) {
+        if (Class.attributes.indexOf(attrName) >= 0) {
+          instance._set(attrName, data[attrName]);
+        }
+      }
     });
 
     Class.prototype.__defineGetter__('isNew', function () {

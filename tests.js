@@ -471,9 +471,19 @@ test("obj.isNew getter should return boolean whether istance has idAttr set or n
 });
 
 test("obj._get method should return actual attribute value if it is set", function () {
+  var noteData = { id: 123, title: 'abc' },
+    note = new Note(noteData);
+
+  ok( note._get('id') === 123 );
+  ok( note._get('title') === 'abc' );
 });
 
 test("obj._set method should set a value of an attribute", function () {
+  var noteData = { id: 123, title: 'abc' },
+    note = new Note(noteData);
+
+  ok( note._set('title', 'new') === undefined, "_set should return nothing");
+  ok( note._get('title') === 'new', "should have changed the attribute value" );
 });
 
 test("obj.get method should return actual attribute values", function () {
@@ -522,14 +532,60 @@ test("obj.data() should return actual data stored in a model instance", function
 });
 
 
-/*
-var Data = function () {
-  this.qwe = 1;
-  this.asd = 2;
-}
-Data.prototype.__defineGetter__('abc', function () { return 3;});
-Data.prototype.__defineGetter__('def', function () {});
+//!
+test("obj.data should be iterable and contain getters for all attributes", function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
 
-var data = new Data;
-console.log(data);
-*/
+  var keys = [];
+  for (var k in note.data) keys.push(k);
+
+  deepEqual(keys, ['id', 'title']);
+
+  ok( note.data.__lookupGetter__('id') );
+  ok( note.data.id === 123);
+
+  ok( note.data.__lookupGetter__('title') );
+  ok( note.data.title === 'abc');
+});
+
+//!
+test("obj.data should also contain setters for all attributes", function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  ok( note.data.__lookupSetter__('id') );
+  ok( note.data.__lookupSetter__('title') );
+
+  note.data.title = 'new';
+  ok( note.data.title === 'new');
+});
+
+//!
+test("obj.data= should be a setter for the instance to set multiple attribute values in the other way", function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  note.data = {
+    id: 321,
+    title: "new"
+  };
+
+  ok( note.data.id === 321 );
+  ok( note.data.title === 'new' );
+});
+
+
+test("obj.data= fails unless right-hand is a plain object", function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  throws(function () { note.data = 1234; },      /C03/, "fails if right-hand is a number");
+  throws(function () { note.data = null; },      /C03/, "fails if right-hand is null");
+  throws(function () { note.data = undefined; }, /C03/, "fails if right-hand is undefined");
+  throws(function () { note.data = true; },      /C03/, "fails if right-hand is boolean true");
+  throws(function () { note.data = false; },     /C03/, "fails if right-hand is boolean false");
+  throws(function () { note.data = $.noop; },    /C03/, "fails if right-hand is a function");
+  throws(function () { note.data = 'str'; },     /C03/, "fails if right-hand is a string");
+  throws(function () { note.data = []; },        /C03/, "fails if right-hand is an array");
+});
