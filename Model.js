@@ -1,3 +1,5 @@
+// TODO Get rid of $.isPlainObject $.extend jQuery sugar.
+
 Model = (function () {
 
   function ModelError(code, message) {
@@ -31,9 +33,11 @@ Model = (function () {
         "`new Model` expects its 2nd argument to be an options object!");
     }
 
-    if (!options.attributes || options.attributes.constructor.name !== 'Array' || options.attributes.length === 0) {
+    if (!options.attributes ||
+          options.attributes.constructor.name !== 'Array' ||
+            options.attributes.length === 0) {
       throw new ModelError('M04',
-        "new model's options should contain nonempty attributes array!");
+        "new model's options should contain a nonempty array of attribute definitions!");
     }
 
     var i, j, attrName,
@@ -42,7 +46,7 @@ Model = (function () {
       attributesDescribed = [],
       attributeNames = [];
 
-    for (i = 0; i < options.attributes.length; i++) {
+    for (var i = 0; i < options.attributes.length; i++) {
       attrNotation = options.attributes[i];
       attrDescribed = Model._parseAttributeNotation(attrNotation);
       if (attrDescribed === false) {
@@ -52,9 +56,9 @@ Model = (function () {
       attributesDescribed.push( attrDescribed );
     }
 
-    for (i = 0; i < attributesDescribed.length; i++) {
+    for (var i = 0; i < attributesDescribed.length; i++) {
       attrDescribed = attributesDescribed[i];
-      for (j = 0; j < attrDescribed.validators.length; j++) {
+      for (var j = 0; j < attrDescribed.validators.length; j++) {
         if (!Model._validators[attrDescribed.validators[j]]) {
           throw new ModelError('M06',
             "attributes should be described with existing validators!");
@@ -74,8 +78,7 @@ Model = (function () {
 
       var instance = this,
         dataFn,
-        data,
-        attrName;
+        data;
 
       if (arguments[0] !== undefined && !$.isPlainObject(arguments[0])) {
         throw new ModelError('C02',
@@ -84,8 +87,9 @@ Model = (function () {
 
       data = arguments[0] || {};
       instance._data = {};
+      instance._changes = {};
 
-      for (attrName in data) {
+      for (var attrName in data) {
         if (Class.attributes.indexOf(attrName) >= 0) {
           instance._set(attrName, data[attrName]);
         }
@@ -149,6 +153,9 @@ Model = (function () {
     Class.prototype.__defineGetter__('isNew', function () {
       return this._data[ this.constructor.idAttr ] === undefined;
     });
+
+    Class.prototype.__defineGetter__('isChanged', function () {});
+    Class.prototype.__defineGetter__('isValid', function () {});
 
     Class.prototype._get = function (attrName) {
       return this._data[attrName];

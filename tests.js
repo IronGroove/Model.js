@@ -1,35 +1,65 @@
 /*
 
+Model.registerValidator('null', function (value) {
+  return true;
+});
+
+Model.registerValidator('email', function (value) {
+  if (!isValidEmail(value)) return Model.errCodes.INVALID_EMAIL;
+});
+
 var Note = new Model('Note', {
-    attributes: [
+  attributes: [
       '[id] nonnull number',
-      '[title] nonnull nonempty string'
+      '[title] nonnull nonempty string',
+      '[email] null nonempty string email'  // email is not required
     ]
-  }),
-  noteone = new Note({ title: 'Test Title 1' }),        // creating new model instance
-  notetwo = new Note({ id: 2, title: 'Test Title 2' }); // creating model instance
+});
 
-noteone.isNew // true
-notetwo.isNew // false
-Note(1) // notetwo
+Note(1) // returns an instance if it is initialized
+Note(2) // returns undefined if instance hasn't been initialaized
 
-notetwo.isChanged // false
-notetwo.title = "Test Title 2-2";
-notetwo.isChanged // true
-notetwo.persist();
-notetwo.isChanged // false
+// Few examples on instances which need to be created with ids known in advance.
+new Note({…})                  // not persisted:  isNew == true   isChanged == false  isPersisted=false
+new Note({ id: 123, …})        // persisted:      isNew == false  isChanged == false  isPersisted=true
+new Note(false, { id: 123, …}) // not persisted:  isNew == true   isChanged == false  isPersisted=false
+
+var note = new Note({ title: "Unknown" });
+note.isNew     // true
+note.isChanged // false
+note.data.title = "Abecedario";
+note.isChanged // true
+note.revert();
+note.isChanged // false
+note.data.title = "Alphabet";
+note.isChanged // true
+note._changed  // { title: "Unknown" }
+note.isValid   // true, calls note._validate()
+note.save();   // should call note._persist() when instance persisted or note._rollback() if shit happened
+note.isChanged // false
+
+// Set up event handlers related to all instances of a Model class.
+Note.bind('initialize', handler);
+Note.bind('beforeValidate', handler);
+
+// Set up event handlers related to a specific instance.
+note.bind('change', handler);
+note.bind('revert', handler);
+note.bind('save', handler);
+note.bind('persist', handler);
+note.bind('rollback', handler);
 
 */
 
 function objectSize(obj) {
-  var size = 0, k;
-  for (k in obj) if (obj.hasOwnProperty(k)) size ++;
+  var size = 0;
+  for (var k in obj) if (obj.hasOwnProperty(k)) size ++;
   return size;
 }
 
 function objectKeys(obj) {
   var keys = [];
-  for (k in obj) keys.push(k);
+  for (var k in obj) keys.push(k);
   return keys;
 }
 
