@@ -118,12 +118,10 @@ Model = (function () {
       instance._data = {};
       instance._changes = {};
 
-      instance._isPersisted =
-        typeof(persistanceFlag) == 'boolean' &&
-          persistanceFlag ||
-            !!data[Class.idAttr];
+      instance._isPersisted = typeof(persistanceFlag) == 'boolean' ?
+        persistanceFlag : !!data[Class.idAttr];
 
-      if (instance._isPersisted && !data[Class.idAttr]) {
+      if (instance._isPersisted && data[Class.idAttr] === undefined) {
         throw new ModelError('C05',
           "instance cannot be explicitly persisted on creation if it has no id attribute set!");
       }
@@ -191,6 +189,10 @@ Model = (function () {
 
     Class.prototype.__defineGetter__('isNew', function () {
       return this._data[ this.constructor.idAttr ] === undefined;
+    });
+
+    Class.prototype.__defineGetter__('isPersisted', function () {
+      return this._isPersisted;
     });
 
     Class.prototype.__defineGetter__('isChanged', function () {});

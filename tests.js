@@ -427,14 +427,6 @@ test("Class.idAttr is first attribute declared", function () {
 });
 
 
-/*
-// Few examples on instances which need to be created with ids known in advance.
-new Note({…})                  // not persisted:  isNew == true   isChanged == false  isPersisted=false
-new Note({ id: 123, …})        // persisted:      isNew == false  isChanged == false  isPersisted=true
-new Note(true, {…})            // fails
-new Note(false, { id: 123, …}) // not persisted:  isNew == true   isChanged == false  isPersisted=false
-*/
-
 module("Instance creation", {
   setup: function () {
     Note = new Model('Note', {
@@ -544,6 +536,32 @@ test("obj.isNew getter should return boolean whether istance has idAttr set or n
   ok( note.isNew, 'returns true if idAttr is NOT set');
 });
 
+test("obj.isPersisted", function () {
+  ok( Note.prototype.__lookupGetter__('isPersisted'), 'isPersisted getter exists on Class');
+
+  var note = new Note;
+  ok( !note.isPersisted );
+
+  var note = new Note(false);
+  ok( !note.isPersisted );
+
+  var note = new Note(false, { title: "Some" });
+  ok( !note.isPersisted );
+
+  var note = new Note({ id: 1212 });
+  ok( note.isPersisted );
+
+  //NOTE This instance is considered new, as if it should be created with a known id.
+  var note = new Note(false, { id: 1212 });
+  ok( !note.isPersisted );
+
+  //! Add other tests ckecking things after note.persist() method call.
+});
+
+test("obj.isChanged", function () {
+  ok( Note.prototype.__lookupGetter__('isChanged'), 'isChanged getter exists on Class');
+});
+
 test("obj._get method should return actual attribute value if it is set", function () {
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
@@ -605,8 +623,6 @@ test("obj.set method should set new attribute values", function () {
   ok( note.set('title', 'boom') === undefined, "should return undefined");
   ok( note.get('title') == 'boom', "should change the value returned afterwards by the get method");
 });
-
-
 
 
 //!
