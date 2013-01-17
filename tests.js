@@ -560,6 +560,14 @@ test("obj.isPersisted", function () {
 
 test("obj.isChanged", function () {
   ok( Note.prototype.__lookupGetter__('isChanged'), 'isChanged getter exists on Class');
+  var note = new Note({ id: 1212, title: "ABC" });
+  ok( !note.isChanged, "persisting object should not be changed right after initializing");
+  note.data.title = "NEW";
+  ok( note.isChanged, "object should be changed after changing any attribute value");
+
+  note.data.title = "ABC";
+  ok( !note.isChanged, "object should not be changed when old value is explicitly changed to the initial one");
+  //! Add other tests checking things after note.revert() method.
 });
 
 test("obj._get method should return actual attribute value if it is set", function () {

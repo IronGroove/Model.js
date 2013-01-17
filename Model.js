@@ -128,7 +128,7 @@ Model = (function () {
 
       for (var attrName in data) {
         if (Class.attributes.indexOf(attrName) >= 0) {
-          instance._set(attrName, data[attrName]);
+          instance._data[attrName] = data[attrName];
         }
       }
 
@@ -195,7 +195,12 @@ Model = (function () {
       return this._isPersisted;
     });
 
-    Class.prototype.__defineGetter__('isChanged', function () {});
+    Class.prototype.__defineGetter__('isChanged', function () {
+      var changed = false;
+      for (var k in this._changes) { changed = true; break; }
+      return changed;
+    });
+
     Class.prototype.__defineGetter__('isValid', function () {});
 
     Class.prototype._get = function (attrName) {
@@ -203,7 +208,15 @@ Model = (function () {
     }
 
     Class.prototype._set = function (attrName, value) {
-      this._data[attrName] = value;
+      if (this._data[attrName] !== value) {
+        if (this._changes[attrName] === value) {
+          delete this._changes[attrName];
+          this._data[attrName] = value;
+        } else {
+          this._changes[attrName] = this._data[attrName];
+          this._data[attrName] = value;
+        }
+      }
     }
 
     Class.prototype.get = function (attr) {
