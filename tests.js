@@ -489,10 +489,10 @@ test("should fail if explicit persistance flag is true and no idAttr value is pr
   ok( true );
 });
 
-test("obj._data should become populated with data provided on creation", function () {
+test("instance._data should become populated with data provided on creation", function () {
   var note = new Note;
-  ok( note.hasOwnProperty('_data'), 'obj gets own property _data created along with instance');
-  ok( $.isPlainObject(note._data), 'obj._data is plain object');
+  ok( note.hasOwnProperty('_data'), 'instance gets own property _data created along with instance');
+  ok( $.isPlainObject(note._data), 'instance._data is plain object');
 
   var note = new Note;
   deepEqual( note._data, {}, 'empty data results in empty copy');
@@ -526,7 +526,7 @@ module("Instance methods", {
   }
 });
 
-test("obj.isNew getter should return boolean whether istance has idAttr set or not", function () {
+test("instance.isNew getter should return boolean whether istance has idAttr set or not", function () {
   ok( Note.prototype.__lookupGetter__('isNew'), 'isNew getter exists on Class');
 
   var note = new Note({ id: 123, title: 'abc' });
@@ -536,7 +536,7 @@ test("obj.isNew getter should return boolean whether istance has idAttr set or n
   ok( note.isNew, 'returns true if idAttr is NOT set');
 });
 
-test("obj.isPersisted", function () {
+test("instance.isPersisted", function () {
   ok( Note.prototype.__lookupGetter__('isPersisted'), 'isPersisted getter exists on Class');
 
   var note = new Note;
@@ -558,19 +558,39 @@ test("obj.isPersisted", function () {
   //! Add other tests ckecking things after note.persist() method call.
 });
 
-test("obj.isChanged", function () {
+test("instance.isChanged", function () {
   ok( Note.prototype.__lookupGetter__('isChanged'), 'isChanged getter exists on Class');
   var note = new Note({ id: 1212, title: "ABC" });
-  ok( !note.isChanged, "persisting object should not be changed right after initializing");
+  ok( !note.isChanged, "persisting instance should not be changed right after initializing");
   note.data.title = "NEW";
-  ok( note.isChanged, "object should be changed after changing any attribute value");
+  ok( note.isChanged, "instance should be changed after changing any attribute value");
 
   note.data.title = "ABC";
-  ok( !note.isChanged, "object should not be changed when old value is explicitly changed to the initial one");
+  ok( !note.isChanged, "instance should not be changed when old value is explicitly changed to the initial one");
   //! Add other tests checking things after note.revert() method.
 });
 
-test("obj._get method should return actual attribute value if it is set", function () {
+//!
+test("instance._changes should reflect currently changed attributes and their persisted values", function () {
+  var note = new Note({ id: 1212, title: "ABC" });
+
+  note.data.title = "NEW";
+  deepEqual( note._changes, { title: "ABC" });
+
+  note.data.id = 123;
+  deepEqual( note._changes, { id: 1212, title: "ABC" });
+
+  note.data.id = 1234;
+  deepEqual( note._changes, { id: 1212, title: "ABC" });
+
+  note.data.id = 1212;
+  deepEqual( note._changes, { title: "ABC" });
+
+  note.data.title = "ABC"
+  deepEqual( note._changes, {});
+});
+
+test("instance._get method should return actual attribute value if it is set", function () {
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
 
@@ -580,18 +600,18 @@ test("obj._get method should return actual attribute value if it is set", functi
   ok( note._get('title') === 'abc' );
 });
 
-test("obj.data() should return actual data stored in a model instance", function () {
+test("instance.data() should return actual data stored in a model instance", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
-  ok( typeof note.data == 'function', "returned object should be a function");
+  ok( typeof note.data == 'function', "returned should be a function");
   ok( note.data() !== note._data, "returned object shouldn't be a reference to a private _data property");
   ok( note.data() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
 
   deepEqual( objectKeys(note.data()), Note.attributes, "keys in returned object should be same as Class attributes");
 });
 
-test("obj._set method should set a value of an attribute", function () {
+test("instance._set method should set a value of an attribute", function () {
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
 
@@ -599,7 +619,7 @@ test("obj._set method should set a value of an attribute", function () {
   ok( note._data.title === 'new' );
 });
 
-test("obj.get method should return actual attribute values", function () {
+test("instance.get method should return actual attribute values", function () {
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
 
@@ -621,7 +641,7 @@ test("obj.get method should return actual attribute values", function () {
   ok( ret.id === 123 && ret.title === 'abc', "returned object should have key-value pairs mirroring real attribute names and corresponding values");
 });
 
-test("obj.set method should set new attribute values", function () {
+test("instance.set method should set new attribute values", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -634,7 +654,7 @@ test("obj.set method should set new attribute values", function () {
 
 
 //!
-test("obj.data should be iterable and contain getters for all attributes", function () {
+test("instance.data should be iterable and contain getters for all attributes", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -650,7 +670,7 @@ test("obj.data should be iterable and contain getters for all attributes", funct
   ok( note.data.title === 'abc');
 });
 
-test("obj.data should also contain setters for all attributes", function () {
+test("instance.data should also contain setters for all attributes", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -661,7 +681,7 @@ test("obj.data should also contain setters for all attributes", function () {
   ok( note.data.title === 'new');
 });
 
-test("obj.data= should be a setter for the instance to set multiple attribute values in the other way", function () {
+test("instance.data= should be a setter for the instance to set multiple attribute values in the other way", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -672,7 +692,7 @@ test("obj.data= should be a setter for the instance to set multiple attribute va
 });
 
 
-test("obj.data= fails unless right-hand is a plain object", function () {
+test("instance.data= fails unless right-hand is a plain object", function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 

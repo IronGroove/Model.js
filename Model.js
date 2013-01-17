@@ -213,7 +213,9 @@ Model = (function () {
           delete this._changes[attrName];
           this._data[attrName] = value;
         } else {
-          this._changes[attrName] = this._data[attrName];
+          if (this._changes[attrName] === undefined) {
+            this._changes[attrName] = this._data[attrName];
+          }
           this._data[attrName] = value;
         }
       }
