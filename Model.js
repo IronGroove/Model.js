@@ -221,6 +221,15 @@ Model = (function () {
       }
     }
 
+    Class.bind = function (eventName, handler) {
+    }
+
+    Class.prototype.bind = function (eventName, handler) {
+    }
+
+    Class.prototype.trigger = function (eventName, params) {
+    }
+
     Class.prototype.get = function (attr) {
       if (!arguments.length) {
         return this.data();

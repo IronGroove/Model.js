@@ -33,7 +33,7 @@ note.revert();
 note.isChanged // false
 note.data.title = "Alphabet";
 note.isChanged // true
-note._changed  // { title: "Unknown" }
+note._changes  // { title: "Unknown" }
 note.isValid   // true, calls note._validate()
 note.save();   // should call note._persist() when instance persisted or note._rollback() if shit happened
 note.isChanged // false
@@ -75,10 +75,14 @@ test("Model.classes should be there", function () {
   ok( $.isPlainObject(Model.classes) );
 });
 
+module("Class methods");
+
+test("Class.bind");
+
 
 module("Model validators");
 
-test("Model.errCodes (3) should be there", function () {
+test("Model.errCodes: there should be three codes", function () {
   ok( Model.errCodes,            'Model.errCodes'            );
   ok( Model.errCodes.WRONG_TYPE, 'Model.errCodes.WRONG_TYPE' );
   ok( Model.errCodes.NULL,       'Model.errCodes.NULL'       );
@@ -705,3 +709,6 @@ test("instance.data= fails unless right-hand is a plain object", function () {
   throws(function () { note.data = 'str'; },     /C03/, "fails if right-hand is a string");
   throws(function () { note.data = []; },        /C03/, "fails if right-hand is an array");
 });
+
+test("instance.bind");
+test("instance.trigger");
