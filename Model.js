@@ -117,6 +117,7 @@ Model = (function () {
 
       instance._data = {};
       instance._changes = {};
+      instance._callbacks = {};
 
       instance._isPersisted = typeof(persistanceFlag) == 'boolean' ?
         persistanceFlag : !!data[Class.idAttr];
@@ -145,6 +146,7 @@ Model = (function () {
 
     Class.attributes = [];
     Class._validators = {};
+    Class._callbacks = {};
 
     for (i = 0; i < attributesDescribed.length; i++) {
       attrName = attributesDescribed[i].attrName;
@@ -222,6 +224,19 @@ Model = (function () {
     }
 
     Class.bind = function (eventName, handler) {
+      if (typeof(eventName) != 'string' ||
+            Model.classCallbackNames.indexOf(eventName) == -1 ||
+              typeof(handler) != 'function') {
+        throw new ModelError('C06',
+          "Class.bind method should be provided with a valid " +
+          "string eventName and a function handler!");
+      }
+
+      if (Class._callbacks[eventName] === undefined) {
+        Class._callbacks[eventName] = [];
+      }
+
+      Class._callbacks[eventName].push(handler);
     }
 
     Class.prototype.bind = function (eventName, handler) {
@@ -269,6 +284,8 @@ Model = (function () {
     return Class;
   }
 
+  Model.classCallbackNames = [ 'initialize' ];
+  Model.instanceCallbackNames = [ 'change', 'persist' ];
 
   Model._parseAttributeNotation = function (attrNotation) {
     var attrName, validators = [], matches, i, validatorsRaw;
