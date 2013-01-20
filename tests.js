@@ -851,4 +851,49 @@ test("instance.bind", function () {
     "let it happen!");
 });
 
-test("instance.trigger");
+test("instance._trigger", function () {
+  var strC = '', strI = '', strCI = '',
+    note = new Note({ id: 123, title: "ABC" });
+
+  // should fail unless 1st argument is not a string name of a known event
+  throws( function () { note._trigger(); },          /I07/, "should fail if no arguments specified!");
+  throws( function () { note._trigger(true); },      /I07/, "should fail if first argument is boolean true!");
+  throws( function () { note._trigger(false); },     /I07/, "should fail if first argument is boolean false!");
+  throws( function () { note._trigger(undefined); }, /I07/, "should fail if first argument is undefined!");
+  throws( function () { note._trigger(1234); },      /I07/, "should fail if first argument is an number!");
+  throws( function () { note._trigger(null); },      /I07/, "should fail if first argument is null!");
+  throws( function () { note._trigger([]); },        /I07/, "should fail if first argument is an array!");
+  throws( function () { note._trigger({}); },        /I07/, "should fail if first argument is an object!");
+  throws( function () { note._trigger(/re/); },      /I07/, "should fail if first argument is a regexp!");
+  throws( function () { note._trigger($.noop); },    /I07/, "should fail if first argument is a function!");
+  throws( function () { note._trigger('string'); },  /I07/, "should fail if first argument is an unknown name!");
+  note._trigger('change');
+  ok (true, "should pass (should do nothing if a known event is triggered though no handlers were previousy bound)");
+
+  Note.bind('change', function () { strC += 'C'; strCI += 'X'; });
+  note._trigger('change');
+  ok( strC == "C", "should run handlers bound to Class if any");
+
+  Note.bind('change', function () { strC += 'A'; strCI += 'Y'; });
+  note._trigger('change');
+  ok( strC == "CCA", "should run handlers bound to Class in the order they were bound if there are more than one");
+
+  note.bind('change', function () { strI += 'B'; strCI += 'Z'; });
+  note._trigger('change');
+  ok( strI == "B", "should run handlers bound to instance if any");
+
+  note.bind('change', function () { strI += 'E'; strCI += '0'; });
+  note._trigger('change');
+  ok( strI == "BBE", "should run handlers bound to instance in the order theu were bound if there are more than one");
+
+  ok( strCI == "XXYXYZXYZ0", "should run handlers bound to Class before handlers bound to an instance");
+
+  var result = '';
+  note.bind('change', function (instance) {
+    result += instance.data.id;
+    result += this.data.title;
+  });
+  note._trigger('change');
+
+  ok( result == '123ABC', "handler function should receive instance in a 1dt argument and in context");
+});

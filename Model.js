@@ -244,7 +244,7 @@ Model = (function () {
             Model._instanceEventNames.indexOf(eventName) == -1 ||
               typeof(handler) != 'function') {
         throw new ModelError('I06',
-          "instance#bind method should be provided with a valid "+
+          "instance.bind method should be provided with a valid "+
           "string eventName and a function handler!");
       }
 
@@ -255,7 +255,26 @@ Model = (function () {
       this._callbacks[eventName].push(handler);
     }
 
-    Class.prototype.trigger = function (eventName, params) {
+    Class.prototype._trigger = function (eventName) {
+      var i, Class = this.constructor;
+      if (typeof(eventName) != 'string' ||
+            Model._classEventNames.indexOf(eventName) == -1 ||
+              Model._instanceEventNames.indexOf(eventName) == -1) {
+        throw new ModelError('I07',
+          "instance._trigger should be provided a valid event name!");
+      }
+
+      if (Class._callbacks[eventName]) {
+        for (i = 0; i < Class._callbacks[eventName].length; i++) {
+          Class._callbacks[eventName][i].call(this, this);
+        }
+      }
+
+      if (this._callbacks[eventName]) {
+        for (i = 0; i < this._callbacks[eventName].length; i++) {
+          this._callbacks[eventName][i].call(this, this);
+        }
+      }
     }
 
     Class.prototype.get = function (attr) {
@@ -267,7 +286,7 @@ Model = (function () {
         if (typeof(arguments[i]) != 'string' ||
               Class.attributes.indexOf(arguments[i]) == -1) {
           throw new ModelError('P01',
-            "Get method should be provided valid attribute names only!");
+            "instance.get method should be provided valid attribute names only!");
         }
       }
 
@@ -287,7 +306,7 @@ Model = (function () {
             Class.attributes.indexOf(attrName) == -1 ||
               arguments.length != 2) {
         throw new ModelError('P02',
-          "Set method should be provided two argument and first of them should be a valid string attribute name!");
+          "instance.set method should be provided two argument and first of them should be a valid string attribute name!");
       }
       this._set(attrName, value);
     };
