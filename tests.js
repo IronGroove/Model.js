@@ -75,12 +75,12 @@ test("Model.classes should be there", function () {
   ok( $.isPlainObject(Model.classes) );
 });
 
-test("Model.classCallbackNames should be there", function () {
-  deepEqual( Model.classCallbackNames, [ 'initialize' ] );
+test("Model._classEventNames should be there", function () {
+  deepEqual( Model._classEventNames, [ 'initialize', 'change' ] );
 });
 
-test("Model.instanceCallbackNames should be there", function () {
-  deepEqual( Model.instanceCallbackNames, [ 'change', 'persist' ] );
+test("Model._instanceEventNames should be there", function () {
+  deepEqual( Model._instanceEventNames, [ 'change', 'persist' ] );
 });
 
 module("Model validators");
@@ -455,19 +455,21 @@ test("Class._callbacks should be there", function () {
 
 test("Class.bind", function () {
   var noop1 = new Function,
-    noop2 = new Function;
+    noop2 = new Function,
+    noop3 = new Function;
 
-  throws( function () { Note.bind(); },          /C06/, "should fail if no arguments specified!");
-  throws( function () { Note.bind(true); },      /C06/, "should fail if first argument is boolean true!");
-  throws( function () { Note.bind(false); },     /C06/, "should fail if first argument is boolean false!");
-  throws( function () { Note.bind(undefined); }, /C06/, "should fail if first argument is undefined!");
-  throws( function () { Note.bind(1234); },      /C06/, "should fail if first argument is an number!");
-  throws( function () { Note.bind(null); },      /C06/, "should fail if first argument is null!");
-  throws( function () { Note.bind([]); },        /C06/, "should fail if first argument is an array!");
-  throws( function () { Note.bind({}); },        /C06/, "should fail if first argument is an object!");
-  throws( function () { Note.bind(/re/); },      /C06/, "should fail if first argument is a regexp!");
-  throws( function () { Note.bind($.noop); },    /C06/, "should fail if first argument is a function!");
-  throws( function () { Note.bind('string'); },  /C06/, "should fail if first argument is an unknown name!");
+  throws( function () { Note.bind(); },                    /C06/, "should fail if no arguments specified!");
+  throws( function () { Note.bind(true); },                /C06/, "should fail if first argument is boolean true!");
+  throws( function () { Note.bind(false); },               /C06/, "should fail if first argument is boolean false!");
+  throws( function () { Note.bind(undefined); },           /C06/, "should fail if first argument is undefined!");
+  throws( function () { Note.bind(1234); },                /C06/, "should fail if first argument is an number!");
+  throws( function () { Note.bind(null); },                /C06/, "should fail if first argument is null!");
+  throws( function () { Note.bind([]); },                  /C06/, "should fail if first argument is an array!");
+  throws( function () { Note.bind({}); },                  /C06/, "should fail if first argument is an object!");
+  throws( function () { Note.bind(/re/); },                /C06/, "should fail if first argument is a regexp!");
+  throws( function () { Note.bind($.noop); },              /C06/, "should fail if first argument is a function!");
+  throws( function () { Note.bind('string'); },            /C06/, "should fail if first argument is an unknown name!");
+  throws( function () { Note.bind('str', $.noop); },       /C06/, "should fail if first argument is an unknown name though 2nd is a function!");
 
   throws( function () { Note.bind('change'); },            /C06/, "should fail if second argument is omitted");
   throws( function () { Note.bind('change', true); },      /C06/, "should fail if second argument is not a function (true boolean supplied)");
@@ -481,10 +483,30 @@ test("Class.bind", function () {
   throws( function () { Note.bind('change', /re/); },      /C06/, "should fail if second argument is not a function (regexp supplied)");
 
   Note.bind('initialize', noop1);
-  deepEqual( Note._callbacks, { initialize: [ noop1 ] });
+  deepEqual( Note._callbacks, { initialize: [ noop1 ] },
+    "should create _callbacks class attribute named after the event bound and "+
+    "create an array with a supplied calback in it, if both arguments are "+
+    "ok (a known event name and a function)!");
 
   Note.bind('initialize', noop2);
-  deepEqual( Note._callbacks, { initialize: [ noop1, noop2 ] });
+  deepEqual( Note._callbacks, { initialize: [ noop1, noop2 ] },
+    "if other callbacks where previously bound, should populate "+
+    "callbacks array for that event with the new callback!");
+
+  Note.bind('initialize', noop3);
+  deepEqual( Note._callbacks, { initialize: [ noop1, noop2, noop3 ] },
+    "if other callbacks where previously bound, should populate "+
+    "callbacks array for that event with the new callback (third)!");
+
+  Note.bind('change', noop1);
+  deepEqual( Note._callbacks, { initialize: [ noop1, noop2, noop3 ], change: [ noop1 ] },
+    "if a callback is bound to the other event, should create new "+
+    "corresponding attribute array in _callbacks and push a bound callback into it!");
+
+  Note.bind('change', noop3);
+  deepEqual( Note._callbacks, { initialize: [ noop1, noop2, noop3 ], change: [ noop1, noop3 ] },
+    "if a duplicate callback is being bound to the same event, "+
+    "let it happen!");
 });
 
 
@@ -778,52 +800,55 @@ test("instance.bind", function () {
     noop2 = new Function,
     noop3 = new Function;
 
-  throws( function () { note.bind(); }, /P100/, "should fail if no arguments specified!");
-  throws( function () { note.bind(true); }, /P100/, "should fail if first argument is not a knows instance event string name (boolean true supplied)!");
-  throws( function () { note.bind(false); }, /P100/, "should fail if first argument is not a knows instance event string name (boolean false supplied)!");
-  throws( function () { note.bind(undefined); }, /P100/, "should fail if first argument is not a knows instance event string name (undefined supplied)!");
-  throws( function () { note.bind(1234); }, /P100/, "should fail if first argument is not a knows instance event string name (number supplied)!");
-  throws( function () { note.bind(null); }, /P100/, "should fail if first argument is not a knows instance event string name (null supplied)!");
-  throws( function () { note.bind([]); }, /P100/, "should fail if first argument is not a knows instance event string name (array supplied)!");
-  throws( function () { note.bind({}); }, /P100/, "should fail if first argument is not a knows instance event string name (object supplied)!");
-  throws( function () { note.bind(/re/); }, /P100/, "should fail if first argument is not a knows instance event string name (regexp supplied)!");
-  throws( function () { note.bind('string'); }, /P100/, "should fail if first argument is not a knows instance event string name (unknown name supplied)!");
+  throws( function () { note.bind(); },                    /I06/, "should fail if no arguments specified!");
+  throws( function () { note.bind(true); },                /I06/, "should fail if first argument is boolean true!");
+  throws( function () { note.bind(false); },               /I06/, "should fail if first argument is boolean false!");
+  throws( function () { note.bind(undefined); },           /I06/, "should fail if first argument is undefined!");
+  throws( function () { note.bind(1234); },                /I06/, "should fail if first argument is an number!");
+  throws( function () { note.bind(null); },                /I06/, "should fail if first argument is null!");
+  throws( function () { note.bind([]); },                  /I06/, "should fail if first argument is an array!");
+  throws( function () { note.bind({}); },                  /I06/, "should fail if first argument is an object!");
+  throws( function () { note.bind(/re/); },                /I06/, "should fail if first argument is a regexp!");
+  throws( function () { note.bind($.noop); },              /I06/, "should fail if first argument is a function!");
+  throws( function () { note.bind('string'); },            /I06/, "should fail if first argument is an unknown name!");
+  throws( function () { note.bind('str', $.noop); },       /I06/, "should fail if first argument is an unknown name though 2nd is a function!");
 
-  throws( function () { note.bind('change'); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is omitted");
-  throws( function () { note.bind('change', true); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is not a function (true boolean supplied)");
-  throws( function () { note.bind('change', false); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is not a function (false boolean supplied)");
-  throws( function () { note.bind('change', undefined); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is not a function (undefined supplied)");
-  throws( function () { note.bind('change', 1234); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is not a function (number supplied)");
-  throws( function () { note.bind('change', null); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is not a function (null supplied)");
-  throws( function () { note.bind('change', []); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is not a function (array supplied)");
-  throws( function () { note.bind('change', {}); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is not a function (object supplied)");
-  throws( function () { note.bind('change', /re/); }, /P101/, "should fail with other exception if first argument is a known instance event string name, but second argument is not a function (regexp supplied)");
+  throws( function () { note.bind('change'); },            /I06/, "should fail if second argument is omitted");
+  throws( function () { note.bind('change', true); },      /I06/, "should fail if second argument is not a function (true boolean supplied)");
+  throws( function () { note.bind('change', false); },     /I06/, "should fail if second argument is not a function (false boolean supplied)");
+  throws( function () { note.bind('change', undefined); }, /I06/, "should fail if second argument is not a function (undefined supplied)");
+  throws( function () { note.bind('change', 1234); },      /I06/, "should fail if second argument is not a function (number supplied)");
+  throws( function () { note.bind('change', null); },      /I06/, "should fail if second argument is not a function (null supplied)");
+  throws( function () { note.bind('change', []); },        /I06/, "should fail if second argument is not a function (array supplied)");
+  throws( function () { note.bind('change', {}); },        /I06/, "should fail if second argument is not a function (object supplied)");
+  throws( function () { note.bind('change', 'str'); },     /I06/, "should fail if second argument is not a function (string supplied)");
+  throws( function () { note.bind('change', /re/); },      /I06/, "should fail if second argument is not a function (regexp supplied)");
 
   note.bind('change', noop1);
   deepEqual( note._callbacks, { change: [ noop1 ] },
-    "should create _callbacks attribute named after the event bound and"+
-    "create an array with a supplied calback in it, if both arguments are"+
-    "ok (a known event name and a function");
+    "should create _callbacks attribute named after the event bound and "+
+    "create an array with a supplied calback in it, if both arguments are "+
+    "ok (a known event name and a function!");
 
   note.bind('change', noop2);
   deepEqual( note._callbacks, { change: [ noop1, noop2 ] },
-    "if other callbacks where previously bound, should populate"+
-    "callbacks array for that event with the new callback");
+    "if other callbacks where previously bound, should populate "+
+    "callbacks array for that event with the new callback!");
 
   note.bind('change', noop3);
   deepEqual( note._callbacks, { change: [ noop1, noop2, noop3 ] },
-    "if other callbacks where previously bound, should populate"+
-    "callbacks array for that event with the new callback (third)");
+    "if other callbacks where previously bound, should populate "+
+    "callbacks array for that event with the new callback (third)!");
 
   note.bind('persist', noop3);
   deepEqual( note._callbacks, { change: [ noop1, noop2, noop3 ], persist: [ noop3 ] },
-    "if a callback is bound to the other event, should create new"+
-    "corresponding attribute array in _callbacks and push a bound callback into it");
+    "if a callback is bound to the other event, should create new "+
+    "corresponding attribute array in _callbacks and push a bound callback into it!");
 
   note.bind('persist', noop3);
   deepEqual( note._callbacks, { change: [ noop1, noop2, noop3 ], persist: [ noop3, noop3 ] },
-    "if a duplicate callback is being bound to the same event,"+
-    "let it happen");
+    "if a duplicate callback is being bound to the same event, "+
+    "let it happen!");
 });
 
 test("instance.trigger");

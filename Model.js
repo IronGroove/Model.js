@@ -225,10 +225,10 @@ Model = (function () {
 
     Class.bind = function (eventName, handler) {
       if (typeof(eventName) != 'string' ||
-            Model.classCallbackNames.indexOf(eventName) == -1 ||
+            Model._classEventNames.indexOf(eventName) == -1 ||
               typeof(handler) != 'function') {
         throw new ModelError('C06',
-          "Class.bind method should be provided with a valid " +
+          "Class.bind method should be provided with a valid "+
           "string eventName and a function handler!");
       }
 
@@ -240,6 +240,19 @@ Model = (function () {
     }
 
     Class.prototype.bind = function (eventName, handler) {
+      if (typeof(eventName) != 'string' ||
+            Model._instanceEventNames.indexOf(eventName) == -1 ||
+              typeof(handler) != 'function') {
+        throw new ModelError('I06',
+          "instance#bind method should be provided with a valid "+
+          "string eventName and a function handler!");
+      }
+
+      if (this._callbacks[eventName] === undefined) {
+        this._callbacks[eventName] = [];
+      }
+
+      this._callbacks[eventName].push(handler);
     }
 
     Class.prototype.trigger = function (eventName, params) {
@@ -284,8 +297,8 @@ Model = (function () {
     return Class;
   }
 
-  Model.classCallbackNames = [ 'initialize' ];
-  Model.instanceCallbackNames = [ 'change', 'persist' ];
+  Model._classEventNames = [ 'initialize', 'change' ];
+  Model._instanceEventNames = [ 'change', 'persist' ];
 
   Model._parseAttributeNotation = function (attrNotation) {
     var attrName, validators = [], matches, i, validatorsRaw;
