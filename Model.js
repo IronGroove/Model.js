@@ -1,4 +1,4 @@
-// TODO Get rid of $.isPlainObject $.extend jQuery sugar.
+// TODO Get rid of $.isPlainObject and $.extend jQuery sugar.
 
 Model = (function () {
 
@@ -306,7 +306,8 @@ Model = (function () {
             Class.attributes.indexOf(attrName) == -1 ||
               arguments.length != 2) {
         throw new ModelError('P02',
-          "instance.set method should be provided two argument and first of them should be a valid string attribute name!");
+          "instance.set method should be provided two argument and first"+
+          "of them should be a valid string attribute name!");
       }
       this._set(attrName, value);
     };
@@ -316,8 +317,18 @@ Model = (function () {
     return Class;
   }
 
-  Model._classEventNames = [ 'initialize', 'change' ];
-  Model._instanceEventNames = [ 'change', 'persist' ];
+
+
+  Model._classes = {};
+  Model._validators = {};
+  Model._classEventNames = 'initialize change'.split(' ');
+  Model._instanceEventNames = 'change persist'.split(' ');
+
+  Model.errCodes = {};
+  Model.errCodes.WRONG_TYPE = 'wrongtype';
+  Model.errCodes.NULL = 'null';
+  Model.errCodes.EMPTY = 'empty';
+
 
   Model._parseAttributeNotation = function (attrNotation) {
     var attrName, validators = [], matches, i, validatorsRaw;
@@ -342,50 +353,39 @@ Model = (function () {
     };
   };
 
-  Model.registerValidator = function (name, validatorFn) {
-    if (typeof name !== 'string'  ||  !name.match(/^[a-zA-Z]+$/)) {
-      throw new ModelError('MrV01', '`Model.registerValidator` expects its 1st argument to be a [a-zA-Z]+ string validator name!');
+  Model.registerGeneralValidator = function (name, fn) {
+    if (typeof name != 'string' ||
+          !name.match(/^[a-zA-Z]+$/) ||
+            typeof fn != 'function' ||
+              !!Model._validators[name]) {
+      throw new ModelError('M01',
+        "`Model.registerGeneralValidator` expects its 1st argument to be "+
+        "a [a-zA-Z]+ string name of a new validator, its 2nd argument to "+
+        "be actual validator function!");
     }
 
-    if (typeof validatorFn !== 'function') {
-      throw new ModelError('MrV02', '`Model.registerValidator` expects its 2nd argument to be actual validator function!');
-    }
-
-    if (!!Model._validators[name]) {
-      throw new ModelError('MrV03', 'validator with that name already exists!');
-    }
-
-    Model._validators[name] = validatorFn;
+    Model._validators[name] = fn;
   };
 
 
-  Model.classes = {};
-
-  Model.errCodes = {};
-  Model.errCodes.WRONG_TYPE = 'wrongtype';
-  Model.errCodes.NULL = 'null';
-  Model.errCodes.EMPTY = 'empty';
-
-  Model._validators = {};
-
-  Model.registerValidator('number', function (value) {
-    if (typeof(value) !== 'number') return Model.errCodes.WRONG_TYPE;
+  Model.registerGeneralValidator('number', function (value) {
+    if (typeof(value) != 'number') return Model.errCodes.WRONG_TYPE;
   });
 
-  Model.registerValidator('string', function (value) {
-    if (typeof(value) !== 'string') return Model.errCodes.WRONG_TYPE;
+  Model.registerGeneralValidator('string', function (value) {
+    if (typeof(value) != 'string') return Model.errCodes.WRONG_TYPE;
   });
 
-  Model.registerValidator('boolean', function (value) {
-    if (typeof(value) !== 'boolean') return Model.errCodes.WRONG_TYPE;
+  Model.registerGeneralValidator('boolean', function (value) {
+    if (typeof(value) != 'boolean') return Model.errCodes.WRONG_TYPE;
   });
 
-  Model.registerValidator('nonnull', function (value) {
+  Model.registerGeneralValidator('nonnull', function (value) {
     if (value === null) return Model.errCodes.NULL;
   });
 
-  Model.registerValidator('nonempty', function (value) {
-    if (typeof(value) !== 'string') return;
+  Model.registerGeneralValidator('nonempty', function (value) {
+    if (typeof(value) != 'string') return;
     if (value === '') return Model.errCodes.EMPTY;
   });
 
