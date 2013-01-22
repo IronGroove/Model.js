@@ -1,8 +1,18 @@
 // TODO Get rid of $.isPlainObject and $.extend jQuery sugar.
 
+
 Model = (function () {
 
   function ModelError(code, message) {
+
+    // ModelError codes stick to the following convention:
+    // - M0** Model constructor errors
+    // - M1** Model class method errors
+    // - M2** Model prototype method errors
+    // - C0** Class constructor errors
+    // - C1** Class class method errors
+    // - C2** Class prototype method errors
+
     this.code = code;
     this.message = message;
   }
@@ -14,29 +24,29 @@ Model = (function () {
 
   function Model(name, options) {
     if (this.constructor != Model) {
-      throw new ModelError('M01',
+      throw new ModelError('M001',
         "new Model classes should be created with keyword `new`!");
     }
 
     if (typeof name != 'string') {
-      throw new ModelError('M02',
+      throw new ModelError('M002',
         "`new Model` expects its 1st argument to be a string name of a new class!");
     }
 
-    if (Model.classes[name]) {
-      throw new ModelError('M07',
-        'models class with that name already exists!');
+    if (Model._classes[name]) {
+      throw new ModelError('M003',
+        'Model class with that name already exists!');
     }
 
     if (!$.isPlainObject(options)) {
-      throw new ModelError('M03',
+      throw new ModelError('M004',
         "`new Model` expects its 2nd argument to be an options object!");
     }
 
     if (!options.attributes ||
-          options.attributes.constructor.name !== 'Array' ||
+          options.attributes.constructor.name != 'Array' ||
             options.attributes.length === 0) {
-      throw new ModelError('M04',
+      throw new ModelError('M005',
         "new model's options should contain a nonempty array of attribute definitions!");
     }
 
@@ -50,7 +60,7 @@ Model = (function () {
       attrNotation = options.attributes[i];
       attrDescribed = Model._parseAttributeNotation(attrNotation);
       if (attrDescribed === false) {
-        throw new ModelError('M05',
+        throw new ModelError('M006',
           "attributes should be valid notation strings!");
       }
       attributesDescribed.push( attrDescribed );
@@ -60,7 +70,7 @@ Model = (function () {
       attrDescribed = attributesDescribed[i];
       for (var j = 0; j < attrDescribed.validators.length; j++) {
         if (!Model._validators[attrDescribed.validators[j]]) {
-          throw new ModelError('M06',
+          throw new ModelError('M007',
             "attributes should be described with existing validators!");
         }
       }
@@ -72,8 +82,8 @@ Model = (function () {
     function Class() {
 
       if (this.constructor != Class) {
-        throw new ModelError('C01',
-          "Class instances should be created with keyword `new`!");
+        throw new ModelError('C001',
+          "Model Class instances should be created with keyword `new`!");
       }
 
       var instance = this, persistanceFlag, data, dataFn;
@@ -91,8 +101,8 @@ Model = (function () {
           data = arguments[0];
         }
         else {
-          throw new ModelError('C02',
-            "when a Class constructor receives one argument, "+
+          throw new ModelError('C002',
+            "When a Model Class constructor receives one argument, "+
             "it should be either a boolean persistance flag or a data object!");
         }
       }
@@ -103,15 +113,15 @@ Model = (function () {
           data = arguments[1];
         }
         else {
-          throw new ModelError('C03',
-            "when a Class constructor receives two arguments, "+
+          throw new ModelError('C003',
+            "When a Model Class constructor receives two arguments, "+
             "they should be a boolean persistance flag and a data object!");
         }
       }
 
       else {
-        throw new ModelError('C04',
-          "a Class constructor should be provided no more than 2 arguments!");
+        throw new ModelError('C004',
+          "A Model Class constructor should be provided no more than 2 arguments!");
       }
 
 
@@ -123,7 +133,7 @@ Model = (function () {
         persistanceFlag : !!data[Class.idAttr];
 
       if (instance._isPersisted && data[Class.idAttr] === undefined) {
-        throw new ModelError('C05',
+        throw new ModelError('C005',
           "instance cannot be explicitly persisted on creation if it has no id attribute set!");
       }
 
@@ -156,6 +166,22 @@ Model = (function () {
 
     Class.idAttr = Class.attributes[0];
 
+    Class.bind = function (eventName, handler) {
+      if (typeof(eventName) != 'string' ||
+            Model._classEventNames.indexOf(eventName) == -1 ||
+              typeof(handler) != 'function') {
+        throw new ModelError('C101',
+          "Class.bind method should be provided with a valid "+
+          "string eventName and a function handler!");
+      }
+
+      if (Class._callbacks[eventName] === undefined) {
+        Class._callbacks[eventName] = [];
+      }
+
+      Class._callbacks[eventName].push(handler);
+    }
+
 
     for (var i = 0; i < Class.attributes.length; i++) {
       (function (attrName) {
@@ -177,7 +203,7 @@ Model = (function () {
 
     Class.prototype.__defineSetter__('data', function (data) {
       if (!$.isPlainObject(data)) {
-        throw new ModelError('C03',
+        throw new ModelError('C003',
           "instance.data= setter accepts plain objects only!");
       }
 
@@ -223,21 +249,6 @@ Model = (function () {
       }
     }
 
-    Class.bind = function (eventName, handler) {
-      if (typeof(eventName) != 'string' ||
-            Model._classEventNames.indexOf(eventName) == -1 ||
-              typeof(handler) != 'function') {
-        throw new ModelError('C06',
-          "Class.bind method should be provided with a valid "+
-          "string eventName and a function handler!");
-      }
-
-      if (Class._callbacks[eventName] === undefined) {
-        Class._callbacks[eventName] = [];
-      }
-
-      Class._callbacks[eventName].push(handler);
-    }
 
     Class.prototype.bind = function (eventName, handler) {
       if (typeof(eventName) != 'string' ||
@@ -312,7 +323,7 @@ Model = (function () {
       this._set(attrName, value);
     };
 
-    Model.classes[name] = Class;
+    Model._classes[name] = Class;
 
     return Class;
   }
@@ -358,7 +369,7 @@ Model = (function () {
           !name.match(/^[a-zA-Z]+$/) ||
             typeof fn != 'function' ||
               !!Model._validators[name]) {
-      throw new ModelError('M01',
+      throw new ModelError('M101',
         "`Model.registerGeneralValidator` expects its 1st argument to be "+
         "a [a-zA-Z]+ string name of a new validator, its 2nd argument to "+
         "be actual validator function!");

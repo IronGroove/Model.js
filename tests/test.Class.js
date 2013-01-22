@@ -1,58 +1,57 @@
 module("Class creation", {
   teardown: function () {
-    Model.classes = [];
+    Model._classes = {};
   }
 });
 
 test("fails without keyword `new`", function () {
-  throws(function () { var Note = Model(); }, /M01/ );
+  throws(function () { var Note = Model(); }, /M001/ );
 });
 
 test("fails unless 1st argument is a string", function () {
-  throws(function () { var Note = new Model(); },         /M02/, 'fails if 1st argument is not specified');
-  throws(function () { var Note = new Model(null); },     /M02/, 'fails if 1st argument is null');
-  throws(function () { var Note = new Model(1234); },     /M02/, 'fails if 1st argument is number');
-  throws(function () { var Note = new Model(true); },     /M02/, 'fails if 1st argument is boolean true');
-  throws(function () { var Note = new Model(false); },    /M02/, 'fails if 1st argument is boolean false');
-  throws(function () { var Note = new Model($.noop); },   /M02/, 'fails if 1st argument is function');
-  throws(function () { var Note = new Model([]); },       /M02/, 'fails if 1st argument is array');
-  throws(function () { var Note = new Model('string'); }, /M03/, 'passes if 1st argument is string');
+  throws(function(){ var Note = new Model(); },         /M002/, 'fails if 1st argument is not specified');
+  throws(function(){ var Note = new Model(null); },     /M002/, 'fails if 1st argument is null');
+  throws(function(){ var Note = new Model(1234); },     /M002/, 'fails if 1st argument is number');
+  throws(function(){ var Note = new Model(true); },     /M002/, 'fails if 1st argument is boolean true');
+  throws(function(){ var Note = new Model(false); },    /M002/, 'fails if 1st argument is boolean false');
+  throws(function(){ var Note = new Model($.noop); },   /M002/, 'fails if 1st argument is function');
+  throws(function(){ var Note = new Model([]); },       /M002/, 'fails if 1st argument is array');
 });
 
-test("fails unless 2nd argument is not a plain object", function () {
-  throws(function () { var Note = new Model('Note'); },           /M03/, 'fails if 2nd argument is not specified');
-  throws(function () { var Note = new Model('Note', null); },     /M03/, 'fails if 2nd argument is null');
-  throws(function () { var Note = new Model('Note', 1234); },     /M03/, 'fails if 2nd argument is number');
-  throws(function () { var Note = new Model('Note', true); },     /M03/, 'fails if 2nd argument is boolean true');
-  throws(function () { var Note = new Model('Note', false); },    /M03/, 'fails if 2nd argument is boolean false');
-  throws(function () { var Note = new Model('Note', $.noop); },   /M03/, 'fails if 2nd argument is function');
-  throws(function () { var Note = new Model('Note', 'string'); }, /M03/, 'fails if 2nd argument is string');
-  throws(function () { var Note = new Model('Note', []); },       /M03/, 'fails if 2nd argument is array');
-  throws(function () { var Note = new Model('Note', {}); },       /M04/, 'passes if 2nd argument is a plain object');
+test("fails unles()d argument is not a plain object", function () {
+  throws(function(){ var Note = new Model('Note'); },           /M004/, 'fails if 2nd argument is not specified');
+  throws(function(){ var Note = new Model('Note', null); },     /M004/, 'fails if 2nd argument is null');
+  throws(function(){ var Note = new Model('Note', 1234); },     /M004/, 'fails if 2nd argument is number');
+  throws(function(){ var Note = new Model('Note', true); },     /M004/, 'fails if 2nd argument is boolean true');
+  throws(function(){ var Note = new Model('Note', false); },    /M004/, 'fails if 2nd argument is boolean false');
+  throws(function(){ var Note = new Model('Note', $.noop); },   /M004/, 'fails if 2nd argument is function');
+  throws(function(){ var Note = new Model('Note', 'string'); }, /M004/, 'fails if 2nd argument is string');
+  throws(function(){ var Note = new Model('Note', []); },       /M004/, 'fails if 2nd argument is array');
+  throws(function(){ var Note = new Model('Note', {}); },       /M005/, 'passes if 2nd argument is a plain object');
 });
 
-test("fails if options contain no attributes array", function () {
-  throws(function () { var Note = new Model('Note', {}); },                       /M04/, 'fails if attributes omitted');
-  throws(function () { var Note = new Model('Note', { attributes: null }); },     /M04/, 'fails if attributes is null');
-  throws(function () { var Note = new Model('Note', { attributes: 1234 }); },     /M04/, 'fails if attributes is number');
-  throws(function () { var Note = new Model('Note', { attributes: true }); },     /M04/, 'fails if attributes is boolean true');
-  throws(function () { var Note = new Model('Note', { attributes: false }); },    /M04/, 'fails if attributes is boolean false');
-  throws(function () { var Note = new Model('Note', { attributes: $.noop }); },   /M04/, 'fails if attributes is function');
-  throws(function () { var Note = new Model('Note', { attributes: 'string' }); }, /M04/, 'fails if attributes is string');
-  throws(function () { var Note = new Model('Note', { attributes: {} }); },       /M04/, 'fails if attributes is object');
-  throws(function () { var Note = new Model('Note', { attributes: [] }); },       /M04/, 'fails if attributes array is empty');
+test("fails if op()s contain no attributes array", function () {
+  throws(function(){ var Note = new Model('Note', {}); },                       /M005/, 'fails if attributes omitted');
+  throws(function(){ var Note = new Model('Note', { attributes: null }); },     /M005/, 'fails if attributes is null');
+  throws(function(){ var Note = new Model('Note', { attributes: 1234 }); },     /M005/, 'fails if attributes is number');
+  throws(function(){ var Note = new Model('Note', { attributes: true }); },     /M005/, 'fails if attributes is boolean true');
+  throws(function(){ var Note = new Model('Note', { attributes: false }); },    /M005/, 'fails if attributes is boolean false');
+  throws(function(){ var Note = new Model('Note', { attributes: $.noop }); },   /M005/, 'fails if attributes is function');
+  throws(function(){ var Note = new Model('Note', { attributes: 'string' }); }, /M005/, 'fails if attributes is string');
+  throws(function(){ var Note = new Model('Note', { attributes: {} }); },       /M005/, 'fails if attributes is object');
+  throws(function(){ var Note = new Model('Note', { attributes: [] }); },       /M005/, 'fails if attributes array is empty');
 });
 
-test("fails if at least one options attributes array element is not a valid attribute notation string", function () {
-  throws(function () { var Note = new Model('Note', { attributes: [ undefined ] }); }, /M05/, 'fails if one of attribute notations is undefined');
-  throws(function () { var Note = new Model('Note', { attributes: [ null ] }); },      /M05/, 'fails if one of attribute notations is null');
-  throws(function () { var Note = new Model('Note', { attributes: [ 1234 ] }); },      /M05/, 'fails if one of attribute notations is number');
-  throws(function () { var Note = new Model('Note', { attributes: [ true ] }); },      /M05/, 'fails if one of attribute notations is boolean true');
-  throws(function () { var Note = new Model('Note', { attributes: [ false ] }); },     /M05/, 'fails if one of attribute notations is boolean false');
-  throws(function () { var Note = new Model('Note', { attributes: [ $.noop ] }); },    /M05/, 'fails if one of attribute notations is function');
-  throws(function () { var Note = new Model('Note', { attributes: [ [] ] }); },        /M05/, 'fails if one of attribute notations is array');
-  throws(function () { var Note = new Model('Note', { attributes: [ {} ] }); },        /M05/, 'fails if one of attribute notations is object');
-  throws(function () { var Note = new Model('Note', { attributes: [ 'string' ] }); },  /M05/, 'fails if one of attribute notations is invalid notation string');
+test("fails if at()st one options attributes array element is not a valid attribute notation string", function () {
+  throws(function(){ var Note = new Model('Note', { attributes: [ undefined ] }); }, /M006/, 'fails if one of attribute notations is undefined');
+  throws(function(){ var Note = new Model('Note', { attributes: [ null ] }); },      /M006/, 'fails if one of attribute notations is null');
+  throws(function(){ var Note = new Model('Note', { attributes: [ 1234 ] }); },      /M006/, 'fails if one of attribute notations is number');
+  throws(function(){ var Note = new Model('Note', { attributes: [ true ] }); },      /M006/, 'fails if one of attribute notations is boolean true');
+  throws(function(){ var Note = new Model('Note', { attributes: [ false ] }); },     /M006/, 'fails if one of attribute notations is boolean false');
+  throws(function(){ var Note = new Model('Note', { attributes: [ $.noop ] }); },    /M006/, 'fails if one of attribute notations is function');
+  throws(function(){ var Note = new Model('Note', { attributes: [ [] ] }); },        /M006/, 'fails if one of attribute notations is array');
+  throws(function(){ var Note = new Model('Note', { attributes: [ {} ] }); },        /M006/, 'fails if one of attribute notations is object');
+  throws(function(){ var Note = new Model('Note', { attributes: [ 'string' ] }); },  /M006/, 'fails if one of attribute notations is invalid notation string');
 });
 
 test("fails if at least one attribute's description is not correctly formatted", function () {
@@ -61,11 +60,11 @@ test("fails if at least one attribute's description is not correctly formatted",
       attributes: [
         '[id] number',
         '[title] string',
-        '1nc0rrect attr1bute n0tat10n'
+        '1nC00rrect attr1bute n0tat10n'
       ]
     });
   },
-  /M05/ );
+  /M006/ );
 });
 
 test("fails if attribute is described with unexistent validator", function () {
@@ -78,7 +77,7 @@ test("fails if attribute is described with unexistent validator", function () {
       ]
     });
   },
-  /M06/ );
+  /M007/ );
 });
 
 test("class knows its name and Model remembers created class by its name", function () {
@@ -98,13 +97,13 @@ test("class knows its name and Model remembers created class by its name", funct
 
   ok( Note.className == 'Note');
   ok( Post.className == 'Post');
-  ok( objectSize(Model.classes) == 2 );
-  ok( Model.classes.Note == Note );
-  ok( Model.classes.Post == Post );
+  ok( objectSize(Model._classes) == 2 );
+  ok( Model._classes.Note == Note );
+  ok( Model._classes.Post == Post );
 });
 
 
-test( "fails if class with specified name already exists", function () {
+test("fails if class with specified name already exists", function () {
   throws( function () {
     var Note = new Model('Note', {
       attributes: [
@@ -119,7 +118,7 @@ test( "fails if class with specified name already exists", function () {
       ]
     });
   },
-  /M07/ );
+  /M003/ );
 });
 
 test("Class.attributes should contain array of declared instance attribute names", function () {
@@ -181,7 +180,7 @@ module("Class attributes and methods", {
   },
   teardown: function () {
     delete Note;
-    delete Model.classes.Note;
+    delete Model._classes.Note;
   }
 });
 
@@ -194,29 +193,29 @@ test("Class.bind", function () {
     noop2 = new Function,
     noop3 = new Function;
 
-  throws( function () { Note.bind(); },                    /C06/, "should fail if no arguments specified!");
-  throws( function () { Note.bind(true); },                /C06/, "should fail if first argument is boolean true!");
-  throws( function () { Note.bind(false); },               /C06/, "should fail if first argument is boolean false!");
-  throws( function () { Note.bind(undefined); },           /C06/, "should fail if first argument is undefined!");
-  throws( function () { Note.bind(1234); },                /C06/, "should fail if first argument is an number!");
-  throws( function () { Note.bind(null); },                /C06/, "should fail if first argument is null!");
-  throws( function () { Note.bind([]); },                  /C06/, "should fail if first argument is an array!");
-  throws( function () { Note.bind({}); },                  /C06/, "should fail if first argument is an object!");
-  throws( function () { Note.bind(/re/); },                /C06/, "should fail if first argument is a regexp!");
-  throws( function () { Note.bind($.noop); },              /C06/, "should fail if first argument is a function!");
-  throws( function () { Note.bind('string'); },            /C06/, "should fail if first argument is an unknown name!");
-  throws( function () { Note.bind('str', $.noop); },       /C06/, "should fail if first argument is an unknown name though 2nd is a function!");
+  throws(function(){ Note.bind(); },                    /C101/, "should fail if no arguments specified!");
+  throws(function(){ Note.bind(true); },                /C101/, "should fail if first argument is boolean true!");
+  throws(function(){ Note.bind(false); },               /C101/, "should fail if first argument is boolean false!");
+  throws(function(){ Note.bind(undefined); },           /C101/, "should fail if first argument is undefined!");
+  throws(function(){ Note.bind(1234); },                /C101/, "should fail if first argument is an number!");
+  throws(function(){ Note.bind(null); },                /C101/, "should fail if first argument is null!");
+  throws(function(){ Note.bind([]); },                  /C101/, "should fail if first argument is an array!");
+  throws(function(){ Note.bind({}); },                  /C101/, "should fail if first argument is an object!");
+  throws(function(){ Note.bind(/re/); },                /C101/, "should fail if first argument is a regexp!");
+  throws(function(){ Note.bind($.noop); },              /C101/, "should fail if first argument is a function!");
+  throws(function(){ Note.bind('string'); },            /C101/, "should fail if first argument is an unknown name!");
+  throws(function(){ Note.bind('str', $.noop); },       /C101/, "should fail if first argument is an unknown name though 2nd is a function!");
 
-  throws( function () { Note.bind('change'); },            /C06/, "should fail if second argument is omitted");
-  throws( function () { Note.bind('change', true); },      /C06/, "should fail if second argument is not a function (true boolean supplied)");
-  throws( function () { Note.bind('change', false); },     /C06/, "should fail if second argument is not a function (false boolean supplied)");
-  throws( function () { Note.bind('change', undefined); }, /C06/, "should fail if second argument is not a function (undefined supplied)");
-  throws( function () { Note.bind('change', 1234); },      /C06/, "should fail if second argument is not a function (number supplied)");
-  throws( function () { Note.bind('change', null); },      /C06/, "should fail if second argument is not a function (null supplied)");
-  throws( function () { Note.bind('change', []); },        /C06/, "should fail if second argument is not a function (array supplied)");
-  throws( function () { Note.bind('change', {}); },        /C06/, "should fail if second argument is not a function (object supplied)");
-  throws( function () { Note.bind('change', 'str'); },     /C06/, "should fail if second argument is not a function (string supplied)");
-  throws( function () { Note.bind('change', /re/); },      /C06/, "should fail if second argument is not a function (regexp supplied)");
+  throws(function(){ Note.bind('change'); },            /C101/, "should fail if second argument is omitted");
+  throws(function(){ Note.bind('change', true); },      /C101/, "should fail if second argument is not a function (true boolean supplied)");
+  throws(function(){ Note.bind('change', false); },     /C101/, "should fail if second argument is not a function (false boolean supplied)");
+  throws(function(){ Note.bind('change', undefined); }, /C101/, "should fail if second argument is not a function (undefined supplied)");
+  throws(function(){ Note.bind('change', 1234); },      /C101/, "should fail if second argument is not a function (number supplied)");
+  throws(function(){ Note.bind('change', null); },      /C101/, "should fail if second argument is not a function (null supplied)");
+  throws(function(){ Note.bind('change', []); },        /C101/, "should fail if second argument is not a function (array supplied)");
+  throws(function(){ Note.bind('change', {}); },        /C101/, "should fail if second argument is not a function (object supplied)");
+  throws(function(){ Note.bind('change', 'str'); },     /C101/, "should fail if second argument is not a function (string supplied)");
+  throws(function(){ Note.bind('change', /re/); },      /C101/, "should fail if second argument is not a function (regexp supplied)");
 
   Note.bind('initialize', noop1);
   deepEqual( Note._callbacks, { initialize: [ noop1 ] },
