@@ -1,3 +1,8 @@
+var Note = new Mode('Note', function () {
+  this.idAttr('id', 'number');
+  this.attr('title', 'string');
+});
+
 Models for javascripting.
 
 

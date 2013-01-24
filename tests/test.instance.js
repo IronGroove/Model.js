@@ -82,6 +82,9 @@ test("instance._data should become populated with data provided on creation",fun
 });
 
 
+
+
+
 module("Instance attributes and methods", {
   setup:function(){
     Note = new Model('Note', {
@@ -187,7 +190,7 @@ test("instance.data() should return actual data stored in a model instance",func
   ok( note.data() !== note._data, "returned object shouldn't be a reference to a private _data property");
   ok( note.data() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
 
-  deepEqual( objectKeys(note.data()), Note.attributes, "keys in returned object should be same as Class attributes");
+  deepEqual( objectKeys(note.data()), Note.attributeNames, "keys in returned object should be same as Class attributes");
 });
 
 test("instance.get method should return actual attribute values",function(){
