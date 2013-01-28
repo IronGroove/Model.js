@@ -1,8 +1,9 @@
-// TODO Get rid of $.isPlainObject and $.extend jQuery sugar.
+// TODO Get rid of $.isPlainObject, $.trim and $.extend jQuery sugar.
 // TODO Turn Class.attributeNames into an immutable getter.
 
 
 Model = (function () {
+
 
   function ModelError(code, message) {
 
@@ -13,6 +14,7 @@ Model = (function () {
     // - C0** Class constructor errors
     // - C1** Class class method errors
     // - C2** Class prototype method errors
+    // - MC1** ModelConfigurator prototype methods
 
     this.code = code;
     this.message = message;
@@ -24,60 +26,64 @@ Model = (function () {
 
 
 
-  function ModelConfigurator(cls) {
-    this._class = cls;
+
+
+
+  function ModelConfigurator(Class) {
+    Class.attributeNames = [];
+    Class._attributes = {};
+    this._cls = Class;
   }
 
-  // Just a convenience.
-  var MCP = ModelConfigurator.prototype;
+  var MC = ModelConfigurator;  // Just a convenience.
 
-  MCP.idAttr = function (name) {
+  MC.prototype.attr = function (name, description, idAttrFlag) {
+    var Class = this._cls,
+      validators = [];
+
+    if (typeof(name) != 'string') {
+      throw new ModelError('MC101',
+        "1st argument of a `attr` method should be a string!");
+    }
+
+    if (Class.attributeNames.indexOf(name) >= 0) {
+      throw new ModelError('MC102',
+        "Attribute `"+name+"` is already added to "+Class.className+"!");
+    }
+
+    if (description && typeof(description) != 'string') {
+      throw new ModelError('MC103',
+        "2nd argument of a `attr` method should be either omitted or a string!");
+    }
+
+    if (description) {
+      description = $.trim(description);
+      validators = description.split(/\s+/);
+    }
+
+    if (!!idAttrFlag) {
+      if (Class.idAttr !== undefined) {
+        throw new ModelError('MC104',
+          "The idAttr is already added to "+Class.className+"!");
+      }
+      Class.idAttr = name;
+    }
+
+    Class.attributeNames.push(name);
+    Class._attributes[name] = validators;
   }
 
-  MCP.attr = function (name) {
-  }
 
 
-  function Model(name, configuration) {
-    if (this.constructor != Model) {
-      throw new ModelError('M001',
-        "new Model classes should be created with keyword `new`!");
-    }
 
-    if (typeof(name) != 'string' ||
-          typeof(configuration) != 'function') {
-      throw new ModelError('M002',
-        "`new Model` expects its 1st argument to be a string name of "+
-        "a new class, and its 2nd argument to be a function!");
-    }
 
-    if (Model._classes[name]) {
-      throw new ModelError('M003',
-        'Model class with that name already exists!');
-    }
 
-//    var attributesDescribed = [];
-//
-//    for (var i = 0; i < options.attributes.length; i++) {
-//      var attrNotation = options.attributes[i];
-//      var attrDescribed = Model._parseAttributeNotation(attrNotation);
-//      if (attrDescribed === false) {
-//        throw new ModelError('M006',
-//          "attributes should be valid notation strings!");
-//      }
-//      attributesDescribed.push( attrDescribed );
-//    }
 
-//    for (var i = 0; i < attributesDescribed.length; i++) {
-//      var attrDescribed = attributesDescribed[i];
-//      for (var j = 0; j < attrDescribed.validators.length; j++) {
-//        if (!Model._validators[attrDescribed.validators[j]]) {
-//          throw new ModelError('M007',
-//            "attributes should be described with existing validators!");
-//        }
-//      }
-//    }
 
+
+
+
+  function Class(name, configuration) {
 
     var DataFunctionPrototype = {};
 
@@ -88,7 +94,10 @@ Model = (function () {
           "Model Class instances should be created with keyword `new`!");
       }
 
-      var instance = this, persistanceFlag, data, dataFn;
+      var instance = this,
+        persistanceFlag,
+        data,
+        dataFn;
 
       if (arguments.length == 0) {
         data = {};
@@ -153,10 +162,10 @@ Model = (function () {
       dataFn.prototype = dataFn.__proto__ = DataFunctionPrototype;
     }
 
+    Class.prototype = Class.__proto__ = this.constructor.prototype;
+
     Class.className = name;
 
-    Class.attributeNames = [];
-    Class._attributes = {};
 
     // A namespace for complex Class specific validators,
     // like if your domain ends with .dk, your region cannot be Asia.
@@ -168,48 +177,11 @@ Model = (function () {
 
     Class._callbacks = {};
 
-//    for (var i = 0; i < attributesDescribed.length; i++) {
-//      var attrName = attributesDescribed[i].attrName;
-//      Class.attributeNames.push( attrName );
-//      Class._attributes[ attrName ] = $.extend([], attributesDescribed[i].validators);
-//    }
-
-    Class.idAttr = Class.attributeNames[0];
 
     var configurator = new ModelConfigurator(Class);
     configuration.call(configurator, configurator);
 
-    //TODO Sanity checks.
-
-    Class.bind = function (eventName, handler) {
-      if (typeof(eventName) != 'string' ||
-            Model._classEventNames.indexOf(eventName) == -1 ||
-              typeof(handler) != 'function') {
-        throw new ModelError('C101',
-          "Class.bind method should be provided with a valid "+
-          "string eventName and a function handler!");
-      }
-
-      if (Class._callbacks[eventName] === undefined) {
-        Class._callbacks[eventName] = [];
-      }
-
-      Class._callbacks[eventName].push(handler);
-    }
-
-    Class.registerValidator = function (name, fn) {
-     //  if (typeof name != 'string' ||
-     //        !name.match(/^[a-zA-Z]+$/) ||
-     //          typeof fn != 'function' ||
-     //            !!Model._validators[name]) {
-     //    throw new ModelError('M101',
-     //      "`Model.registerValidator` expects its 1st argument to be "+
-     //      "a [a-zA-Z]+ string name of a new validator, its 2nd argument to "+
-     //      "be actual validator function!");
-     //  }
-     //
-     //  Class._validators[name] = fn;
-    }
+    // TODO Sanity checks.
 
     // Extend DataFunctionPrototype with attribute getters and setters.
 
@@ -226,138 +198,224 @@ Model = (function () {
       })(Class.attributeNames[i]);
     }
 
-
-    Class.prototype.__defineGetter__('data', function () {
-      return this._data2;
-    });
-
-    Class.prototype.__defineSetter__('data', function (data) {
-      if (!$.isPlainObject(data)) {
-        throw new ModelError('C003',
-          "instance.data= setter accepts plain objects only!");
-      }
-
-      var instance = this;
-      for (var attrName in data) {
-        if (Class.attributeNames.indexOf(attrName) >= 0) {
-          instance._set(attrName, data[attrName]);
-        }
-      }
-    });
-
-    Class.prototype.__defineGetter__('isNew', function () {
-      return this._data[ this.constructor.idAttr ] === undefined;
-    });
-
-    Class.prototype.__defineGetter__('isPersisted', function () {
-      return this._isPersisted;
-    });
-
-    Class.prototype.__defineGetter__('isChanged', function () {
-      var changed = false;
-      for (var k in this._changes) { changed = true; break; }
-      return changed;
-    });
-
-    Class.prototype.__defineGetter__('isValid', function () {
-    });
-
-    Class.prototype.bind = function (eventName, handler) {
-      if (typeof(eventName) != 'string' ||
-            Model._instanceEventNames.indexOf(eventName) == -1 ||
-              typeof(handler) != 'function') {
-        throw new ModelError('I06',
-          "instance.bind method should be provided with a valid "+
-          "string eventName and a function handler!");
-      }
-
-      if (this._callbacks[eventName] === undefined) {
-        this._callbacks[eventName] = [];
-      }
-
-      this._callbacks[eventName].push(handler);
-    }
-
-    Class.prototype.get = function (attr) {
-      if (!arguments.length) {
-        return this.data();
-      }
-
-      for (var i = 0; i < arguments.length; i++) {
-        if (typeof(arguments[i]) != 'string' ||
-              Class.attributeNames.indexOf(arguments[i]) == -1) {
-          throw new ModelError('P01',
-            "instance.get method should be provided valid attribute names only!");
-        }
-      }
-
-      if (arguments.length == 1) {
-        return this._get(attr);
-      }
-
-      var data = {}; for (var i = 0; i < arguments.length; i++) {
-        data[ arguments[i] ] = this._data[ arguments[i] ];
-      }
-
-      return data;
-    };
-
-    Class.prototype.set = function (attrName, value) {
-      if (typeof(attrName) != 'string' ||
-            Class.attributeNames.indexOf(attrName) == -1 ||
-              arguments.length != 2) {
-        throw new ModelError('P02',
-          "instance.set method should be provided two argument and first"+
-          "of them should be a valid string attribute name!");
-      }
-      this._set(attrName, value);
-    };
-
-    Class.prototype._get = function (attrName) {
-      return this._data[attrName];
-    }
-
-    Class.prototype._set = function (attrName, value) {
-      if (this._data[attrName] !== value) {
-        if (this._changes[attrName] === value) {
-          delete this._changes[attrName];
-          this._data[attrName] = value;
-        } else {
-          if (this._changes[attrName] === undefined) {
-            this._changes[attrName] = this._data[attrName];
-          }
-          this._data[attrName] = value;
-        }
-      }
-    }
-
-    Class.prototype._trigger = function (eventName) {
-      var i, Class = this.constructor;
-      if (typeof(eventName) != 'string' ||
-            Model._classEventNames.indexOf(eventName) == -1 ||
-              Model._instanceEventNames.indexOf(eventName) == -1) {
-        throw new ModelError('I07',
-          "instance._trigger should be provided a valid event name!");
-      }
-
-      if (Class._callbacks[eventName]) {
-        for (i = 0; i < Class._callbacks[eventName].length; i++) {
-          Class._callbacks[eventName][i].call(this, this);
-        }
-      }
-
-      if (this._callbacks[eventName]) {
-        for (i = 0; i < this._callbacks[eventName].length; i++) {
-          this._callbacks[eventName][i].call(this, this);
-        }
-      }
-    }
-
-    Model._classes[name] = Class;
-
     return Class;
   }
 
+
+  Class.prototype.bind = function (eventName, handler) {
+    var Class = this;
+    if (typeof(eventName) != 'string' ||
+          Model._classEventNames.indexOf(eventName) == -1 ||
+            typeof(handler) != 'function') {
+      throw new ModelError('C101',
+        "Class.bind method should be provided with a valid "+
+        "string eventName and a function handler!");
+    }
+
+    if (Class._callbacks[eventName] === undefined) {
+      Class._callbacks[eventName] = [];
+    }
+
+    Class._callbacks[eventName].push(handler);
+  }
+
+
+  Class.prototype.registerValidator = function (name, fn) {
+   //  if (typeof name != 'string' ||
+   //        !name.match(/^[a-zA-Z]+$/) ||
+   //          typeof fn != 'function' ||
+   //            !!Model._validators[name]) {
+   //    throw new ModelError('M101',
+   //      "`Model.registerValidator` expects its 1st argument to be "+
+   //      "a [a-zA-Z]+ string name of a new validator, its 2nd argument to "+
+   //      "be actual validator function!");
+   //  }
+   //
+   //  Class._validators[name] = fn;
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+  var InstancePrototype = {};
+
+  InstancePrototype.__defineGetter__('data', function () {
+    return this._data2;
+  });
+
+  InstancePrototype.__defineSetter__('data', function (data) {
+    if (!$.isPlainObject(data)) {
+      throw new ModelError('C003',
+        "instance.data= setter accepts plain objects only!");
+    }
+
+    var Class = this.constructor,
+      instance = this;
+
+    for (var attrName in data) {
+      if (Class.attributeNames.indexOf(attrName) >= 0) {
+        instance._set(attrName, data[attrName]);
+      }
+    }
+  });
+
+  InstancePrototype.__defineGetter__('isNew', function () {
+    return this._data[ this.constructor.idAttr ] === undefined;
+  });
+
+  InstancePrototype.__defineGetter__('isPersisted', function () {
+    return this._isPersisted;
+  });
+
+  InstancePrototype.__defineGetter__('isChanged', function () {
+    var changed = false;
+    for (var k in this._changes) { changed = true; break; }
+    return changed;
+  });
+
+  InstancePrototype.__defineGetter__('isValid', function () {
+  });
+
+  InstancePrototype.bind = function (eventName, handler) {
+    if (typeof(eventName) != 'string' ||
+          Model._instanceEventNames.indexOf(eventName) == -1 ||
+            typeof(handler) != 'function') {
+      throw new ModelError('I06',
+        "instance.bind method should be provided with a valid "+
+        "string eventName and a function handler!");
+    }
+
+    if (this._callbacks[eventName] === undefined) {
+      this._callbacks[eventName] = [];
+    }
+
+    this._callbacks[eventName].push(handler);
+  }
+
+  InstancePrototype.get = function (attr) {
+    if (!arguments.length) {
+      return this.data();
+    }
+
+    var Class = this.constructor;
+
+    for (var i = 0; i < arguments.length; i++) {
+      if (typeof(arguments[i]) != 'string' ||
+            Class.attributeNames.indexOf(arguments[i]) == -1) {
+        throw new ModelError('P01',
+          "instance.get method should be provided valid attribute names only!");
+      }
+    }
+
+    if (arguments.length == 1) {
+      return this._get(attr);
+    }
+
+    var data = {}; for (var i = 0; i < arguments.length; i++) {
+      data[ arguments[i] ] = this._data[ arguments[i] ];
+    }
+
+    return data;
+  };
+
+  InstancePrototype.set = function (attrName, value) {
+    var Class = this.constructor;
+    if (typeof(attrName) != 'string' ||
+          Class.attributeNames.indexOf(attrName) == -1 ||
+            arguments.length != 2) {
+      throw new ModelError('P02',
+        "instance.set method should be provided two argument and first"+
+        "of them should be a valid string attribute name!");
+    }
+    this._set(attrName, value);
+  };
+
+  InstancePrototype._get = function (attrName) {
+    return this._data[attrName];
+  }
+
+  InstancePrototype._set = function (attrName, value) {
+    if (this._data[attrName] !== value) {
+      if (this._changes[attrName] === value) {
+        delete this._changes[attrName];
+        this._data[attrName] = value;
+      } else {
+        if (this._changes[attrName] === undefined) {
+          this._changes[attrName] = this._data[attrName];
+        }
+        this._data[attrName] = value;
+      }
+    }
+  }
+
+  InstancePrototype._trigger = function (eventName) {
+    var i, Class = this.constructor;
+    if (typeof(eventName) != 'string' ||
+          Model._classEventNames.indexOf(eventName) == -1 ||
+            Model._instanceEventNames.indexOf(eventName) == -1) {
+      throw new ModelError('I07',
+        "instance._trigger should be provided a valid event name!");
+    }
+
+    if (Class._callbacks[eventName]) {
+      for (i = 0; i < Class._callbacks[eventName].length; i++) {
+        Class._callbacks[eventName][i].call(this, this);
+      }
+    }
+
+    if (this._callbacks[eventName]) {
+      for (i = 0; i < this._callbacks[eventName].length; i++) {
+        this._callbacks[eventName][i].call(this, this);
+      }
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+  function Model(name, configuration) {
+    if (this.constructor != Model) {
+      throw new ModelError('M001',
+        "New models should be created with keyword `new`!");
+    }
+
+    if (typeof(name) != 'string' ||
+          typeof(configuration) != 'function') {
+      throw new ModelError('M002',
+        "`new Model` expects its 1st argument to be a string name of "+
+        "a new class, and its 2nd argument to be a function!");
+    }
+
+    if (Model._classes[name]) {
+      throw new ModelError('M003',
+        'A Model with that name already exists!');
+    }
+
+    var cls = new Class(name, configuration);
+
+    var Mediator = new Function;
+    Mediator.prototype = InstancePrototype;
+    cls.prototype = new Mediator;
+    cls.prototype.constructor = cls;
+
+    Model._classes[name] = cls;
+
+    return cls;
+  }
 
 
   Model._classes = {};
@@ -370,29 +428,6 @@ Model = (function () {
   Model.errCodes.NULL = 'null';
   Model.errCodes.EMPTY = 'empty';
 
-
-  Model._parseAttributeNotation = function (attrNotation) {
-    var attrName, validators = [], matches, i, validatorsRaw;
-
-    if (typeof attrNotation !== 'string') return false;
-
-    matches = attrNotation.match(/^\s*\[([a-zA-Z]+)\]\s*([a-zA-Z\s]*)$/);
-    if (!matches) return false;
-
-    attrName = matches[1];
-    validatorsRaw = matches[2].split(/\s+/);
-
-    for (i = 0; i < validatorsRaw.length; i++) {
-      if (validatorsRaw[i].length  &&  validators.indexOf(validatorsRaw[i]) === -1) {
-        validators.push(validatorsRaw[i]);
-      }
-    }
-
-    return {
-      attrName: attrName,
-      validators: validators
-    };
-  };
 
   Model.registerValidator = function (name, fn) {
     if (typeof name != 'string' ||
@@ -408,8 +443,6 @@ Model = (function () {
     Model._validators[name] = fn;
   };
 
-
-  // Register some general validators.
 
   Model.registerValidator('number', function (value) {
     if (typeof(value) != 'number') return Model.errCodes.WRONG_TYPE;
@@ -432,6 +465,12 @@ Model = (function () {
     if (value === '') return Model.errCodes.EMPTY;
   });
 
+  if (window && window.MODEL_JS_TEST_MODE) {
+    window.ModelError = ModelError;
+    window.ModelConfigurator = ModelConfigurator;
+    window.Class = Class;
+    window.InstancePrototype = InstancePrototype;
+  }
 
   return Model;
 

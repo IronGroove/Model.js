@@ -25,9 +25,9 @@ test("_validators", function () {
 
 test("errCodes", function () {
   ok( $.isPlainObject(Model.errCodes), 'Model.errCodes attribute exists and is plain object' );
-  ok( Model.errCodes.WRONG_TYPE,       'Model.errCodes.WRONG_TYPE' );
-  ok( Model.errCodes.NULL,             'Model.errCodes.NULL'       );
-  ok( Model.errCodes.EMPTY,            'Model.errCodes.EMPTY'      );
+  ok( Model.errCodes.WRONG_TYPE == 'wrongtype', 'Model.errCodes.WRONG_TYPE' );
+  ok( Model.errCodes.NULL == 'null',            'Model.errCodes.NULL'       );
+  ok( Model.errCodes.EMPTY == 'empty',          'Model.errCodes.EMPTY'      );
 });
 
 
@@ -148,84 +148,6 @@ test("next calls next calls should not affect previously registered valildators"
 
 
 
-module("Model class methods: _parseAttributeNotation");
-
-test("should return false unless provided notation is a string", function () {
-  ok( ! Model._parseAttributeNotation(),          'not specified');
-  ok( ! Model._parseAttributeNotation(undefined), 'explicit undefined');
-  ok( ! Model._parseAttributeNotation(null),      'null');
-  ok( ! Model._parseAttributeNotation(1234),      'number');
-  ok( ! Model._parseAttributeNotation(true),      'boolean true');
-  ok( ! Model._parseAttributeNotation(false),     'boolean false');
-  ok( ! Model._parseAttributeNotation([]),        'array');
-  ok( ! Model._parseAttributeNotation({}),        'object');
-  ok( ! Model._parseAttributeNotation(/re/),      'regexp');
-  ok( ! Model._parseAttributeNotation($.noop),    'function');
-});
-
-test("should return false if provided notation is invalid", function () {
-  ok( ! Model._parseAttributeNotation('id number'),     "invalid if first token—attribute name—is NOT within brackets");
-  ok( ! Model._parseAttributeNotation('[1d] number'),   "invalid if attribute name is not a-Z string");
-  ok( ! Model._parseAttributeNotation('[slug] str1ng'), "invalid if there is a non a-Z char in following after brackets validator names");
-  ok( ! Model._parseAttributeNotation('[] number'),     "invalid if there is no attribute name between the brackets");
-  ok( ! Model._parseAttributeNotation('[]'),            "invalid if there is no attribute name between the brackets and no validator names after them");
-});
-
-test("should return result if provided notation is valid", function () {
-  var parsed = {};
-
-  ok( parsed[0] = Model._parseAttributeNotation('[aZ] aZstring'),   "valid if first token—attribute name—is a-Z string within brackets, followed by a-Z validator names separated by spaces");
-  ok( parsed[1] = Model._parseAttributeNotation('[id]'),            "valid if there's only attribute name");
-  ok( parsed[2] = Model._parseAttributeNotation('[id] number nil'), "valid if several validators requested");
-  ok( parsed[3] = Model._parseAttributeNotation('[id] nil nil'),    "valid if duplicate validators requested");
-  ok( parsed[4] = Model._parseAttributeNotation('[id] number'),     "valid if requested validators are known");
-  ok( parsed[5] = Model._parseAttributeNotation('[id] unknown'),    "valid even if requested validators are unknown");
-
-  ok( $.isPlainObject(parsed[0]) );
-  ok( objectSize(parsed[0]) == 2 );
-  equal( parsed[0].attrName, 'aZ' );
-  deepEqual( parsed[0].validators, [ 'aZstring' ] );
-
-  ok( $.isPlainObject(parsed[1]) );
-  ok( objectSize(parsed[1]) == 2 );
-  equal( parsed[1].attrName, 'id' );
-  deepEqual( parsed[1].validators, [] );
-
-  ok( $.isPlainObject(parsed[2]) );
-  ok( objectSize(parsed[2]) == 2 );
-  equal( parsed[2].attrName, 'id' );
-  deepEqual( parsed[2].validators, [ 'number', 'nil'] );
-
-  ok( $.isPlainObject(parsed[3]) );
-  ok( objectSize(parsed[3]) == 2 );
-  equal( parsed[3].attrName, 'id' );
-  deepEqual( parsed[3].validators, [ 'nil'] );
-
-  ok( $.isPlainObject(parsed[4]) );
-  ok( objectSize(parsed[4]) == 2 );
-  equal( parsed[4].attrName, 'id' );
-  deepEqual( parsed[4].validators, [ 'number' ] );
-
-  ok( $.isPlainObject(parsed[5]) );
-  ok( objectSize(parsed[5]) == 2 );
-  equal( parsed[5].attrName, 'id' );
-  deepEqual( parsed[5].validators, [ 'unknown' ] );
-});
-
-test("trimmed provided notation or not, it should not affect the result", function () {
-  ok( Model._parseAttributeNotation(' [id] ')            );
-  ok( Model._parseAttributeNotation(' [id] number ')     );
-  ok( Model._parseAttributeNotation(' [id] number nil ') );
-  ok( ! Model._parseAttributeNotation(' [] ')            );
-  ok( ! Model._parseAttributeNotation(' [] string ')     );
-  ok( ! Model._parseAttributeNotation(' [1d] string ')   );
-  ok( ! Model._parseAttributeNotation(' [id] str1ng ')   );
-});
-
-
-
-
-
 module("Model instance, e.g. Class, creation", {
   teardown: function () {
     Model._classes = {};
@@ -284,78 +206,31 @@ test("new Classes should know their names and Model should remembers created Cla
   ok( Model._classes.Post == Post );
 });
 
-// test("fails if any of attributes has error in its attribute notation", function () {
-//   throws(function () {
-//     var Note = new Model('Note', {
-//       attributes: [
-//         '[id] number',
-//         '[title] string',
-//         '1nC00rrect attr1bute n0tat10n'
-//       ]
-//     });
-//   }, /M006/, "incorrect format");
-//
-//   throws(function () {
-//     var Note = new Model('Note', {
-//       attributes: [
-//         '[id] number',
-//         '[title] string',
-//         '[description] unexistent'
-//       ]
-//     });
-//   },
-//   /M007/, "unknown validator");
-// });
-//
-//
-//
-// test("Class.attributeNames should contain array of declared instance attribute names", function () {
-//   var Note = new Model('Note', function () {
-//     this.attr('id', 'number');
-//     this.attr('title', 'string');
-//   });
-//
-//   var Post = new Model('Post', function () {
-//     this.attr('id', 'number');
-//     this.attr('title', 'string');
-//     this.attr('body', 'string');
-//   });
-//
-//   deepEqual( Note.attributeNames, [ 'id', 'title' ]);
-//   deepEqual( Post.attributeNames, [ 'slug', 'title', 'body' ]);
-// });
-//
-//
-// test("Class._attributes should be a map of attrName to validators", function () {
-//   var Note = new Model('Note', {
-//       attributes: [
-//         '[id] nonnull number',
-//         '[title] nonnull nonempty string'
-//       ]
-//     });
-//   deepEqual( Note._attributes.id, [ 'nonnull', 'number' ]);
-//   deepEqual( Note._attributes.title, [ 'nonnull', 'nonempty', 'string' ]);
-// });
-//
-// test("Class.idAttr is first attribute declared", function () {
-//   var Note = new Model('Note', {
-//       attributes: [
-//         '[id] number',
-//         '[title] string'
-//       ]
-//     }),
-//     Post = new Model('Post', {
-//       attributes: [
-//         '[slug] number',
-//         '[title] string',
-//         '[body] string'
-//       ]
-//     });
-//   ok( Note.idAttr === 'id');
-//   ok( Post.idAttr === 'slug');
-// });
+test("Class.attributeNames should contain array of declared instance attribute names", function () {
+  var Note = new Model('Note', function () {
+    this.attr('id', 'number', true);
+    this.attr('title', 'string');
+  });
+
+  var Post = new Model('Post', function () {
+    this.attr('id', 'number', true);
+    this.attr('title', 'string');
+    this.attr('body', 'string');
+  });
+
+  deepEqual( Note.attributeNames, [ 'id', 'title' ]);
+  deepEqual( Post.attributeNames, [ 'id', 'title', 'body' ]);
+});
 
 
+test("Class._attributes should be a map of attrName to validators", function () {
+  var Note = new Model('Note', function () {
+    this.attr('id', 'nonnull number', true);
+    this.attr('title', 'nonnull nonempty string');
+  });
 
+  deepEqual( Note._attributes.id, [ 'nonnull', 'number' ]);
+  deepEqual( Note._attributes.title, [ 'nonnull', 'nonempty', 'string' ]);
+});
 
-
+// TODO idAttr tests.

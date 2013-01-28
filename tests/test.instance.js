@@ -1,10 +1,8 @@
 module("Instance creation", {
   setup:function(){
-    Note = new Model('Note', {
-      attributes: [
-        '[id] number',
-        '[title] string'
-      ]
+    Note = new Model('Note', function () {
+      this.attr('id', 'number', true);
+      this.attr('title', 'string');
     });
   },
   teardown:function(){
@@ -87,11 +85,9 @@ test("instance._data should become populated with data provided on creation",fun
 
 module("Instance attributes and methods", {
   setup:function(){
-    Note = new Model('Note', {
-      attributes: [
-        '[id] number',
-        '[title] string'
-      ]
+    Note = new Model('Note', function () {
+      this.attr('id', 'number', true);
+      this.attr('title', 'string');
     });
   },
   teardown:function(){

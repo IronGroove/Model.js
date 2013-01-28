@@ -1,10 +1,8 @@
 module("Class attributes and methods", {
   setup: function () {
-    Note = new Model('Note', {
-      attributes: [
-        '[id] number',
-        '[title] string'
-      ]
+    Note = new Model('Note', function () {
+      this.attr('id', 'number', true);
+      this.attr('title', 'string');
     });
   },
   teardown: function () {

@@ -1,29 +1,28 @@
-var Note = new Mode('Note', function () {
-  this.idAttr('id', 'number');
-  this.attr('title', 'string');
-});
-
 Models for javascripting.
+
+    var User = new Model('User', function () {
+      this.attr('id', 'nonnull number', true);
+      this.attr('displayName', 'nonnull nonempty string');
+      this.attr('email', 'null nonempty string email');
+    });
+
+    var Note = new Mode('Note', function () {
+      this.attr('id', 'nonnull number', true);
+      this.attr('title', 'nonnull nonempty string');
+    });
 
 
     Model.registerValidator('null', function (value) {
       return true;
     });
 
+    Model.errCodes.INVALID_EMAIL = 'invalidemail';
     Model.registerValidator('email', function (value) {
       if (!isValidEmail(value)) return Model.errCodes.INVALID_EMAIL;
     });
 
-    var Note = new Model('Note', {
-      attributes: [
-          '[id] nonnull number',
-          '[title] nonnull nonempty string',
-          '[email] null nonempty string email'  // email is not required
-        ]
-    });
 
-    Note(1) // returns an instance if it is initialized
-    Note(2) // or returns undefined if instance hasn't been initialaized
+    Note(1) // Returns an instance if it is initialized or undefined if instance hasn't been initialized.
 
     // Few examples on instances which need to be created with ids known in advance.
     new Note({…})                  // not persisted:  isNew == true   isChanged == false  isPersisted=false
@@ -54,5 +53,3 @@ Models for javascripting.
     note.bind('save', handler);
     note.bind('persist', handler);
     note.bind('rollback', handler);
-
-
