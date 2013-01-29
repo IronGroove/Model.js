@@ -89,28 +89,30 @@ module("Model class methods: registerValidator", {
 });
 
 test("fails unless 1st argument is [a-zA-Z]+ string", function () {
-  throws(function(){ Model.registerValidator(); },         /M101/, 'fails if 1st argument is not specified');
-  throws(function(){ Model.registerValidator(null); },     /M101/, 'fails if 1st argument is null');
-  throws(function(){ Model.registerValidator(1234); },     /M101/, 'fails if 1st argument is number');
-  throws(function(){ Model.registerValidator(true); },     /M101/, 'fails if 1st argument is boolean true');
-  throws(function(){ Model.registerValidator(false); },    /M101/, 'fails if 1st argument is boolean false');
-  throws(function(){ Model.registerValidator($.noop); },   /M101/, 'fails if 1st argument is function');
-  throws(function(){ Model.registerValidator([]); },       /M101/, 'fails if 1st argument is array');
-  throws(function(){ Model.registerValidator({}); },       /M101/, 'fails if 1st argument is object');
-  throws(function(){ Model.registerValidator(/string/); }, /M101/, 'fails if 1st argument is regexp');
-  throws(function(){ Model.registerValidator('str1ng'); }, /M101/, 'fails if 1st argument contains numbers');
+  throws(function(){ Model.registerValidator(); },          /M101/, 'not specified');
+  throws(function(){ Model.registerValidator(null); },      /M101/, 'null');
+  throws(function(){ Model.registerValidator(undefined); }, /M101/, 'undefined');
+  throws(function(){ Model.registerValidator(1234); },      /M101/, 'number');
+  throws(function(){ Model.registerValidator(true); },      /M101/, 'boolean true');
+  throws(function(){ Model.registerValidator(false); },     /M101/, 'boolean false');
+  throws(function(){ Model.registerValidator($.noop); },    /M101/, 'function');
+  throws(function(){ Model.registerValidator([]); },        /M101/, 'array');
+  throws(function(){ Model.registerValidator({}); },        /M101/, 'object');
+  throws(function(){ Model.registerValidator(/string/); },  /M101/, 'regexp');
+  throws(function(){ Model.registerValidator('str1ng'); },  /M101/, 'contains numbers (wrong format)');
 });
 
 test("fails unless 2nd argument is function", function () {
-  throws(function(){ Model.registerValidator('string'); },           /M101/, 'fails if 2nd argument is not specified');
-  throws(function(){ Model.registerValidator('string', null); },     /M101/, 'fails if 2nd argument is null');
-  throws(function(){ Model.registerValidator('string', 1234); },     /M101/, 'fails if 2nd argument is number');
-  throws(function(){ Model.registerValidator('string', true); },     /M101/, 'fails if 2nd argument is boolean true');
-  throws(function(){ Model.registerValidator('string', false); },    /M101/, 'fails if 2nd argument is boolean false');
-  throws(function(){ Model.registerValidator('string', []); },       /M101/, 'fails if 2nd argument is array');
-  throws(function(){ Model.registerValidator('string', {}); },       /M101/, 'fails if 2nd argument is object');
-  throws(function(){ Model.registerValidator('string', /re/); },     /M101/, 'fails if 2nd argument is regexp');
-  throws(function(){ Model.registerValidator('string', 'string'); }, /M101/, 'fails if 2nd argument is string');
+  throws(function(){ Model.registerValidator('string'); },            /M101/, 'not specified');
+  throws(function(){ Model.registerValidator('string', null); },      /M101/, 'null');
+  throws(function(){ Model.registerValidator('string', undefined); }, /M101/, 'undefined');
+  throws(function(){ Model.registerValidator('string', 1234); },      /M101/, 'number');
+  throws(function(){ Model.registerValidator('string', 'string'); },  /M101/, 'string');
+  throws(function(){ Model.registerValidator('string', true); },      /M101/, 'boolean true');
+  throws(function(){ Model.registerValidator('string', false); },     /M101/, 'boolean false');
+  throws(function(){ Model.registerValidator('string', []); },        /M101/, 'array');
+  throws(function(){ Model.registerValidator('string', {}); },        /M101/, 'object');
+  throws(function(){ Model.registerValidator('string', /re/); },      /M101/, 'regexp');
 
   Model.registerValidator('some', $.noop);
   ok(true, 'passes if 2nd argument is function');
@@ -126,7 +128,7 @@ test("should populate Model._validators object with a new key-value pair", funct
   ok(Model._validators['some'] === $.noop);
 });
 
-test("next calls next calls should not affect previously registered valildators", function () {
+test("next calls should not affect previously registered valildators", function () {
   var noop1 = function () {},
     noop2 = function () {},
     noop3 = function () {};
@@ -154,14 +156,13 @@ module("Model instance, e.g. Class, creation", {
   }
 });
 
-test("fails without keyword `new`", function () {
+test("should fail without keyword `new`", function () {
   throws(function () { var Note = Model(); }, /M001/ );
-
   var Note = new Model('Note', $.noop);
   ok(true, "passes if 1st argument is a string and 2nd is a function");
 });
 
-test("fails unless Class name (1st argument) is a string", function () {
+test("should fail unless Class name (1st argument) is a string", function () {
   throws(function(){ var Note = new Model(); },         /M002/, 'not specified');
   throws(function(){ var Note = new Model(undefined);}, /M002/, 'explicit undefined');
   throws(function(){ var Note = new Model(null); },     /M002/, 'null');
@@ -174,7 +175,7 @@ test("fails unless Class name (1st argument) is a string", function () {
   throws(function(){ var Note = new Model({}); },       /M002/, 'plain object');
 });
 
-test("fails unless Class configuration (2nd argument) is a function", function () {
+test("should fail unless Class configuration (2nd argument) is a function", function () {
   throws(function(){ var Note = new Model('Note'); },           /M002/, 'not specified');
   throws(function(){ var Note = new Model('Note', undefined);}, /M002/, 'explicit undefined');
   throws(function(){ var Note = new Model('Note', null); },     /M002/, 'null');
@@ -186,7 +187,7 @@ test("fails unless Class configuration (2nd argument) is a function", function (
   throws(function(){ var Note = new Model('Note', []); },       /M002/, 'array');
 });
 
-test("fails if Class with specified name already exists", function () {
+test("should fail if Class with specified name already exists", function () {
   throws( function () {
     var Note = new Model('Note', $.noop);
     Note = new Model('Note', $.noop);
@@ -206,31 +207,10 @@ test("new Classes should know their names and Model should remembers created Cla
   ok( Model._classes.Post == Post );
 });
 
-test("Class.attributeNames should contain array of declared instance attribute names", function () {
-  var Note = new Model('Note', function () {
-    this.attr('id', 'number', true);
-    this.attr('title', 'string');
-  });
-
-  var Post = new Model('Post', function () {
-    this.attr('id', 'number', true);
-    this.attr('title', 'string');
-    this.attr('body', 'string');
-  });
-
-  deepEqual( Note.attributeNames, [ 'id', 'title' ]);
-  deepEqual( Post.attributeNames, [ 'id', 'title', 'body' ]);
-});
 
 
-test("Class._attributes should be a map of attrName to validators", function () {
-  var Note = new Model('Note', function () {
-    this.attr('id', 'nonnull number', true);
-    this.attr('title', 'nonnull nonempty string');
-  });
 
-  deepEqual( Note._attributes.id, [ 'nonnull', 'number' ]);
-  deepEqual( Note._attributes.title, [ 'nonnull', 'nonempty', 'string' ]);
-});
 
-// TODO idAttr tests.
+module("Class sanity checks");
+
+// TODO

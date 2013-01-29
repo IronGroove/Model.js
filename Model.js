@@ -4,6 +4,13 @@
 
 Model = (function () {
 
+  var MC;
+
+
+
+  //
+  //
+  //
 
   function ModelError(code, message) {
 
@@ -26,16 +33,30 @@ Model = (function () {
 
 
 
+  //
+  //
+  //
 
+  function ModelConfigurator(cls) {
+    cls.attributeNames = [];
+    cls._attributes = {};
 
+    // A namespace for complex Class specific validators,
+    // like if your domain ends with .dk, your region cannot be Asia.
+    cls._validators = {};
 
-  function ModelConfigurator(Class) {
-    Class.attributeNames = [];
-    Class._attributes = {};
-    this._cls = Class;
+    // A namespace for Class specific errCodes returned by Class._validators,
+    // like INVALID_REGION_BY_DOMAIN.
+    cls.errCodes = {};
+
+    cls._callbacks = {};
+
+    cls.prototype = cls.__proto__ = Class.prototype;
+
+    this._cls = cls;
   }
 
-  var MC = ModelConfigurator;  // Just a convenience.
+  MC = ModelConfigurator;  // Just a convenience.
 
   MC.prototype.attr = function (name, description, idAttrFlag) {
     var Class = this._cls,
@@ -53,7 +74,7 @@ Model = (function () {
 
     if (description && typeof(description) != 'string') {
       throw new ModelError('MC103',
-        "2nd argument of a `attr` method should be either omitted or a string!");
+        "2nd argument of `attr` method should be either omitted or a string!");
     }
 
     if (description) {
@@ -75,17 +96,15 @@ Model = (function () {
 
 
 
+  //
+  //
+  //
 
+  function Class(configuration) {
 
-
-
-
-
-
-
-  function Class(name, configuration) {
-
-    var DataFunctionPrototype = {};
+    var DataFunctionPrototype = {},
+      i,
+      configurator;
 
     function Class() {
 
@@ -96,6 +115,7 @@ Model = (function () {
 
       var instance = this,
         persistanceFlag,
+        attrName,
         data,
         dataFn;
 
@@ -114,12 +134,14 @@ Model = (function () {
         else {
           throw new ModelError('C002',
             "When a Model Class constructor receives one argument, "+
-            "it should be either a boolean persistance flag or a data object!");
+            "it should be either a boolean persistance flag or "+
+            "a data object!");
         }
       }
 
       else if (arguments.length == 2) {
-        if (typeof(arguments[0]) == 'boolean' && $.isPlainObject(arguments[1])) {
+        if (typeof(arguments[0]) == 'boolean' &&
+              $.isPlainObject(arguments[1])) {
           persistanceFlag = arguments[0];
           data = arguments[1];
         }
@@ -132,7 +154,8 @@ Model = (function () {
 
       else {
         throw new ModelError('C004',
-          "A Model Class constructor should be provided no more than 2 arguments!");
+          "A Model Class constructor should be provided no more "+
+          "than 2 arguments!");
       }
 
 
@@ -145,47 +168,31 @@ Model = (function () {
 
       if (instance._isPersisted && data[Class.idAttr] === undefined) {
         throw new ModelError('C005',
-          "instance cannot be explicitly persisted on creation if it has no id attribute set!");
+          "instance cannot be explicitly persisted on creation "+
+          "if it has no id attribute set!");
       }
 
-      for (var attrName in data) {
+      for (attrName in data) {
         if (Class.attributeNames.indexOf(attrName) >= 0) {
           instance._data[attrName] = data[attrName];
         }
       }
 
       instance._data2 = dataFn = function () {
-        if (arguments.length == 1 && arguments[0] === undefined) return instance;
+        if (arguments.length == 1 && arguments[0] === undefined) {
+          return instance;
+        }
         return $.extend({}, instance._data);
       }
 
       dataFn.prototype = dataFn.__proto__ = DataFunctionPrototype;
     }
 
-    Class.prototype = Class.__proto__ = this.constructor.prototype;
-
-    Class.className = name;
-
-
-    // A namespace for complex Class specific validators,
-    // like if your domain ends with .dk, your region cannot be Asia.
-    Class._validators = {};
-
-    // A namespace for Class specific errCodes returned by Class._validators,
-    // like INVALID_REGION_BY_DOMAIN.
-    Class.errCodes = {};
-
-    Class._callbacks = {};
-
-
-    var configurator = new ModelConfigurator(Class);
+    configurator = new ModelConfigurator(Class);
     configuration.call(configurator, configurator);
 
-    // TODO Sanity checks.
-
     // Extend DataFunctionPrototype with attribute getters and setters.
-
-    for (var i = 0; i < Class.attributeNames.length; i++) {
+    for (i = 0; i < Class.attributeNames.length; i++) {
       (function (attrName) {
         DataFunctionPrototype.__defineGetter__(attrName, function () {
           var instance = this(undefined);
@@ -220,30 +227,9 @@ Model = (function () {
   }
 
 
-  Class.prototype.registerValidator = function (name, fn) {
-   //  if (typeof name != 'string' ||
-   //        !name.match(/^[a-zA-Z]+$/) ||
-   //          typeof fn != 'function' ||
-   //            !!Model._validators[name]) {
-   //    throw new ModelError('M101',
-   //      "`Model.registerValidator` expects its 1st argument to be "+
-   //      "a [a-zA-Z]+ string name of a new validator, its 2nd argument to "+
-   //      "be actual validator function!");
-   //  }
-   //
-   //  Class._validators[name] = fn;
-  }
-
-
-
-
-
-
-
-
-
-
-
+  //
+  //
+  //
 
   var InstancePrototype = {};
 
@@ -311,7 +297,8 @@ Model = (function () {
       if (typeof(arguments[i]) != 'string' ||
             Class.attributeNames.indexOf(arguments[i]) == -1) {
         throw new ModelError('P01',
-          "instance.get method should be provided valid attribute names only!");
+          "instance.get method should be provided "+
+          "valid attribute names only!");
       }
     }
 
@@ -380,12 +367,9 @@ Model = (function () {
 
 
 
-
-
-
-
-
-
+  //
+  //
+  //
 
   function Model(name, configuration) {
     if (this.constructor != Model) {
@@ -405,13 +389,16 @@ Model = (function () {
         'A Model with that name already exists!');
     }
 
-    var cls = new Class(name, configuration);
+    var cls = new Class(configuration), Mediator;
 
-    var Mediator = new Function;
+    // TODO Sanity checks.
+
+    Mediator = new Function;
     Mediator.prototype = InstancePrototype;
     cls.prototype = new Mediator;
     cls.prototype.constructor = cls;
 
+    cls.className = name;
     Model._classes[name] = cls;
 
     return cls;
@@ -464,6 +451,8 @@ Model = (function () {
     if (typeof(value) != 'string') return;
     if (value === '') return Model.errCodes.EMPTY;
   });
+
+
 
   if (window && window.MODEL_JS_TEST_MODE) {
     window.ModelError = ModelError;

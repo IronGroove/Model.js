@@ -1,15 +1,23 @@
 module("ModelConfigurator methods", {
   setup: function () {
-    model = {};
-    conf = new ModelConfigurator(model);
+    cls = {};
+    conf = new ModelConfigurator(cls);
   },
   teardown: function () {
-    delete model;
+    delete cls;
     delete conf;
   }
 });
 
-test("attr", function () {
+test("some general attributes should be set on a configured class", function () {
+  deepEqual( cls._attributes,    {}, '_attributes');
+  deepEqual( cls._validators,    {}, '_validators');
+  deepEqual( cls._callbacks,     {}, '_callbacks');
+  deepEqual( cls.attributeNames, [], 'attributeNames');
+  deepEqual( cls.errCodes,       {}, 'errCodes');
+});
+
+test("attr should configure attributes on the class", function () {
   // Should fail if 1st argument is not a string!
   throws(function(){ conf.attr(); },          /MC101/, "should fail if 1st argument is omitted");
   throws(function(){ conf.attr(undefined); }, /MC101/, "should fail if 1st argument is explicit undefined");
@@ -22,13 +30,26 @@ test("attr", function () {
   throws(function(){ conf.attr([]); },        /MC101/, "should fail if 1st argument is an array");
   throws(function(){ conf.attr({}); },        /MC101/, "should fail if 1st argument is a plain object");
 
-  conf.attr('slug'); ok( model.attributeNames.indexOf('slug') >= 0,
+  conf.attr('slug'); ok( cls.attributeNames.indexOf('slug') >= 0,
     "should add attribute name to a `attributeNames` array if 1st argument is a string");
 
   throws(function(){ conf.attr('slug'); }, /MC102/,
     "should fail if attibute with that name has been already defined");
 
   conf.attr('title', 'string nonempty nonnull');
-  deepEqual( model._attributes.title, [ 'string', 'nonempty', 'nonnull' ],
+  deepEqual( cls._attributes.title, [ 'string', 'nonempty', 'nonnull' ],
     "should remember validator names specified in attribute description string");
+
+  deepEqual( cls.attributeNames, [ 'slug', 'title' ]);
+
+  conf.attr('id', 'number', true);
+  ok( cls.idAttr == 'id');
+
+  deepEqual( cls.attributeNames, [ 'slug', 'title', 'id' ]);
+  deepEqual( cls._attributes.id, [ 'number' ]);
+  deepEqual( cls._attributes.title, [ 'string', 'nonempty', 'nonnull' ]);
+  deepEqual( cls._attributes.slug, []);
+
+  throws(function(){ conf.attr('otherId', 'number', true); }, /MC104/,
+    "should fail not allowing to define any other idAttr");
 });
