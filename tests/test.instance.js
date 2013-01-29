@@ -23,12 +23,12 @@ test("shouldn't fail if receives nothing",function(){
 });
 
 test("should fail if Class constructor is passed 1 argument and it is neither boolean, nor data object",function(){
-  throws(function(){ var note = new Note('abc'); }, /C002/, 'fails when receives a string' );
-  throws(function(){ var note = new Note(12345); }, /C002/, 'fails when receives a number' );
-  throws(function(){ var note = new Note([]); },    /C002/, 'fails when receives an array' );
-  throws(function(){ var note = new Note(null);  }, /C002/, 'fails when receives null' );
-  throws(function(){ var note = new Note(undefined);  }, /C002/, 'fails when receives explicit undefined' );
-  throws(function(){ var note = new Note(/re/);  }, /C002/, 'fails when receives a regexp' );
+  throws(function(){ var note = new Note('abc'); },     /C002/, 'fails when receives a string' );
+  throws(function(){ var note = new Note(12345); },     /C002/, 'fails when receives a number' );
+  throws(function(){ var note = new Note([]); },        /C002/, 'fails when receives an array' );
+  throws(function(){ var note = new Note(null);  },     /C002/, 'fails when receives null' );
+  throws(function(){ var note = new Note(undefined); }, /C002/, 'fails when receives explicit undefined' );
+  throws(function(){ var note = new Note(/re/);  },     /C002/, 'fails when receives a regexp' );
 
   var note = new Note(false);
   ok( true, 'passes when receives false');

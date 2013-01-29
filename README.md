@@ -1,14 +1,38 @@
 Models for javascripting.
 
-    var User = new Model('User', function () {
-      this.attr('id', 'nonnull number', true);
-      this.attr('displayName', 'nonnull nonempty string');
-      this.attr('email', 'null nonempty string email');
+    COUNTRIES = [ 'USA', 'Ukraine' ];
+    LOCALES = [ 'en', 'uk' ];
+
+    var User = new Model('User', function (errCodes) {
+
+      errCodes.FORBIDDEN_AVATAR_HOST = 'forbiddenavatarhost';
+      errCodes.INVALID_POSTAL_CODE = 'invalidpostalcode';
+
+      this.attr('id!+',         'number');
+      this.attr('displayName+', 'string', 'nonempty');
+      this.attr('email+',       'string', 'email');
+      this.attr('country+',     'string', ['in', COUNTRIES]);
+      this.attr('locale',       'string', 'nonempty', ['in', LOCALES]);  // may be null
+      this.attr('postalCode+',  'string', 'nonempty');
+      this.attr('avatarUrl+',   'string', 'url', function (value) {
+        var host = hostFromURL(value);
+        if (host != 'gravatar.com') return errCodes.FORBIDDEN_AVATAR_HOST;
+      });
+
+      this.validates(function (data) {
+        if (!validatePostalCode(data.postalCode, data.country) {
+          return errCodes.INVALID_POSTAL_CODE;
+        }
+      });
     });
 
     var Note = new Mode('Note', function () {
-      this.attr('id', 'nonnull number', true);
-      this.attr('title', 'nonnull nonempty string');
+      this.attr('id!', 'number', 'nonnull');
+      this.attr('title+', 'string', ['minlength', 8]);
+
+      this.beforeValidation(function () {
+        this.data.title = $.trim(this.data.title);
+      });
     });
 
 
@@ -20,6 +44,7 @@ Models for javascripting.
     Model.registerValidator('email', function (value) {
       if (!isValidEmail(value)) return Model.errCodes.INVALID_EMAIL;
     });
+
 
 
     Note(1) // Returns an instance if it is initialized or undefined if instance hasn't been initialized.

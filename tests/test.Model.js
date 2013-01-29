@@ -1,7 +1,7 @@
 module("Model class attributes");
 
 test("_classes", function () {
-  ok( $.isPlainObject(Model._classes) );
+  deepEqual( Model._classes, {} );
 });
 
 test("_classEventNames", function () {
@@ -21,13 +21,15 @@ test("_validators", function () {
   ok( $.isFunction(Model._validators.boolean),  'Model._validators.boolean'  );
   ok( $.isFunction(Model._validators.nonnull),  'Model._validators.nonnull'  );
   ok( $.isFunction(Model._validators.nonempty), 'Model._validators.nonempty' );
+  ok( objectSize(Model._validators) == 5,       'and nothing excess'         );
 });
 
 test("errCodes", function () {
-  ok( $.isPlainObject(Model.errCodes), 'Model.errCodes attribute exists and is plain object' );
-  ok( Model.errCodes.WRONG_TYPE == 'wrongtype', 'Model.errCodes.WRONG_TYPE' );
-  ok( Model.errCodes.NULL == 'null',            'Model.errCodes.NULL'       );
-  ok( Model.errCodes.EMPTY == 'empty',          'Model.errCodes.EMPTY'      );
+  ok( $.isPlainObject(Model.errCodes),          'Model.errCodes attribute exists and is plain object' );
+  ok( Model.errCodes.WRONG_TYPE == 'wrongtype', 'Model.errCodes.WRONG_TYPE'  );
+  ok( Model.errCodes.NULL == 'null',            'Model.errCodes.NULL'        );
+  ok( Model.errCodes.EMPTY == 'empty',          'Model.errCodes.EMPTY'       );
+  ok( objectSize(Model.errCodes) == 3,          'and nothing excess'         );
 });
 
 
@@ -158,33 +160,35 @@ module("Model instance, e.g. Class, creation", {
 
 test("should fail without keyword `new`", function () {
   throws(function () { var Note = Model(); }, /M001/ );
+});
+
+test("should fail if Class name (1st argument) is not a string or "+
+     "Class configuration (2nd argument) is not a function",
+function () {
+
+  throws(function(){ var N = new Model(); },              /M002/, '1: not specified');
+  throws(function(){ var N = new Model(undefined);},      /M002/, '1: explicit undefined');
+  throws(function(){ var N = new Model(null); },          /M002/, '1: null');
+  throws(function(){ var N = new Model(true); },          /M002/, '1: boolean true');
+  throws(function(){ var N = new Model(false); },         /M002/, '1: boolean false');
+  throws(function(){ var N = new Model(1234); },          /M002/, '1: number');
+  throws(function(){ var N = new Model($.noop); },        /M002/, '1: function');
+  throws(function(){ var N = new Model(/re/); },          /M002/, '1: regexp');
+  throws(function(){ var N = new Model([]); },            /M002/, '1: array');
+  throws(function(){ var N = new Model({}); },            /M002/, '1: plain object');
+
+  throws(function(){ var N = new Model('N'); },           /M002/, '2: not specified');
+  throws(function(){ var N = new Model('N', undefined);}, /M002/, '2: explicit undefined');
+  throws(function(){ var N = new Model('N', null); },     /M002/, '2: null');
+  throws(function(){ var N = new Model('N', true); },     /M002/, '2: boolean true');
+  throws(function(){ var N = new Model('N', false); },    /M002/, '2: boolean false');
+  throws(function(){ var N = new Model('N', 1234); },     /M002/, '2: number');
+  throws(function(){ var N = new Model('N', 'string'); }, /M002/, '2: string');
+  throws(function(){ var N = new Model('N', /re/); },     /M002/, '2: regexp');
+  throws(function(){ var N = new Model('N', []); },       /M002/, '2: array');
+
   var Note = new Model('Note', $.noop);
   ok(true, "passes if 1st argument is a string and 2nd is a function");
-});
-
-test("should fail unless Class name (1st argument) is a string", function () {
-  throws(function(){ var Note = new Model(); },         /M002/, 'not specified');
-  throws(function(){ var Note = new Model(undefined);}, /M002/, 'explicit undefined');
-  throws(function(){ var Note = new Model(null); },     /M002/, 'null');
-  throws(function(){ var Note = new Model(true); },     /M002/, 'boolean true');
-  throws(function(){ var Note = new Model(false); },    /M002/, 'boolean false');
-  throws(function(){ var Note = new Model(1234); },     /M002/, 'number');
-  throws(function(){ var Note = new Model($.noop); },   /M002/, 'function');
-  throws(function(){ var Note = new Model(/re/); },     /M002/, 'regexp');
-  throws(function(){ var Note = new Model([]); },       /M002/, 'array');
-  throws(function(){ var Note = new Model({}); },       /M002/, 'plain object');
-});
-
-test("should fail unless Class configuration (2nd argument) is a function", function () {
-  throws(function(){ var Note = new Model('Note'); },           /M002/, 'not specified');
-  throws(function(){ var Note = new Model('Note', undefined);}, /M002/, 'explicit undefined');
-  throws(function(){ var Note = new Model('Note', null); },     /M002/, 'null');
-  throws(function(){ var Note = new Model('Note', true); },     /M002/, 'boolean true');
-  throws(function(){ var Note = new Model('Note', false); },    /M002/, 'boolean false');
-  throws(function(){ var Note = new Model('Note', 1234); },     /M002/, 'number');
-  throws(function(){ var Note = new Model('Note', 'string'); }, /M002/, 'string');
-  throws(function(){ var Note = new Model('Note', /re/); },     /M002/, 'regexp');
-  throws(function(){ var Note = new Model('Note', []); },       /M002/, 'array');
 });
 
 test("should fail if Class with specified name already exists", function () {

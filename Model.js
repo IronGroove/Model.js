@@ -227,6 +227,7 @@ Model = (function () {
   }
 
 
+
   //
   //
   //
@@ -389,7 +390,8 @@ Model = (function () {
         'A Model with that name already exists!');
     }
 
-    var cls = new Class(configuration), Mediator;
+    var cls = new Class(configuration),
+      Mediator;
 
     // TODO Sanity checks.
 
@@ -453,6 +455,10 @@ Model = (function () {
   });
 
 
+
+  //
+  //
+  //
 
   if (window && window.MODEL_JS_TEST_MODE) {
     window.ModelError = ModelError;
