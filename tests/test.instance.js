@@ -195,6 +195,212 @@ function () {
 
 
 
+module("instance.isNew", {
+  teardown:function () {
+    Model._classes = {};
+  }
+});
+
+test("when idAttr is set",
+function () {
+  var note, Note = new Model('Note', function () {
+    this.attr('id!', 'number');
+    this.attr('title', 'string');
+  });
+
+  ok( Note.prototype.__lookupGetter__('isNew'), 'isNew getter exists on Class');
+
+
+  note = new Note;
+  ok( note.isNew );
+
+  note = new Note({});
+  ok( note.isNew );
+
+  note = new Note({ id: 1212 });
+  ok( !note.isNew );
+
+  note = new Note({ title: "Some" });
+  ok( note.isNew );
+
+
+  note = new Note(false);
+  ok( note.isNew );
+
+  note = new Note(false, {});
+  ok( note.isNew );
+
+  //NOTE This instance is considered new, as if it should be created with a known id.
+  note = new Note(false, { id: 1212 });
+  ok( note.isNew );
+
+  note = new Note(false, { title: "Some" });
+  ok( note.isNew );
+
+
+  throws(function () {
+    note = new Note(true);
+    note.isNew;
+  }, /C005/);
+
+  throws(function () {
+    note = new Note(true, {});
+    note.isNew;
+  }, /C005/);
+
+  throws(function () {
+    note = new Note(true, { title: "Some" });
+    note.isNew;
+  }, /C005/);
+
+  note = new Note(true, { id: 1212 });
+  ok( !note.isNew );
+});
+
+test("when no idAttr is set",
+function () {
+  var note, Note = new Model('Note', function () {
+    this.attr('slug', 'string');
+    this.attr('title', 'string');
+  });
+
+
+  throws(function () {
+    note = new Note;
+    note.isNew;
+  }, /C006/);
+
+  throws(function () {
+    note = new Note({});
+    note.isNew;
+  }, /C006/);
+
+  note = new Note({ title: "Some" });
+  ok( !note.isNew );
+
+
+  note = new Note(false);
+  ok( note.isNew );
+
+  note = new Note(false, {});
+  ok( note.isNew );
+
+  note = new Note(false, { title: "Some" });
+  ok( note.isNew );
+
+  throws(function () {
+    note = new Note(true);
+    note.isNew;
+  }, /C006/);
+
+  throws(function () {
+    note = new Note(true, {});
+    note.isNew;
+  }, /C006/);
+
+  note = new Note(true, { title: "Some" });
+  ok( !note.isNew );
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -215,28 +421,16 @@ module("Instance attributes and methods", {
   }
 });
 
-
-test("instance.isNew getter should return boolean whether istance has idAttr set or not",
+test("instance.hasChanged",
 function () {
-  ok( Note.prototype.__lookupGetter__('isNew'), 'isNew getter exists on Class');
-
-  var note = new Note({ id: 123, title: 'abc' });
-  ok( !note.isNew, 'returns false if idAttr is set');
-
-  note = new Note({ title: 'abc' });
-  ok( note.isNew, 'returns true if idAttr is NOT set');
-});
-
-test("instance.isChanged",
-function () {
-  ok( Note.prototype.__lookupGetter__('isChanged'), 'isChanged getter exists on Class');
+  ok( Note.prototype.__lookupGetter__('hasChanged'), 'hasChanged getter exists on Class');
   var note = new Note({ id: 1212, title: "ABC" });
-  ok( !note.isChanged, "persisting instance should not be changed right after initializing");
+  ok( !note.hasChanged, "persisting instance should not be changed right after initializing");
   note.data.title = "NEW";
-  ok( note.isChanged, "instance should be changed after changing any attribute value");
+  ok( note.hasChanged, "instance should be changed after changing any attribute value");
 
   note.data.title = "ABC";
-  ok( !note.isChanged, "instance should not be changed when old value is explicitly changed to the initial one");
+  ok( !note.hasChanged, "instance should not be changed when old value is explicitly changed to the initial one");
   //! Add other tests checking things after note.revert() method.
 });
 

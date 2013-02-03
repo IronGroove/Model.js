@@ -192,6 +192,10 @@ Model = (function () {
         dataEmpty = true,
         dataFn;
 
+      instance._data = {};
+      instance._changes = {};
+      instance._callbacks = {};
+
       if (arguments.length == 0) {
         data = {};
       }
@@ -232,10 +236,6 @@ Model = (function () {
       }
 
 
-      instance._data = {};
-      instance._changes = {};
-      instance._callbacks = {};
-
       for (attrName in data) {
         if (cls.attributeNames.indexOf(attrName) >= 0) {
           instance._data[attrName] = data[attrName];
@@ -243,36 +243,28 @@ Model = (function () {
         }
       }
 
+      // Instance tends to be persisted on initialization!
+      instance._persisted = 1;
+
       if (persistanceFlag === undefined) {
-        if (cls.idAttr) {
-          instance._isPersisted = !!data[cls.idAttr];
-        }
-        else {
-          instance._isPersisted = true;
-        }
+        if (cls.idAttr && !data[cls.idAttr]) instance._persisted = 0;
       }
 
       else if (persistanceFlag) {
         if (cls.idAttr) {
-          if (!!data[cls.idAttr]) {
-            instance._isPersisted = true;
-          }
-          else {
+          if (!data[cls.idAttr]) {
             throw new ModelError('C005',
               "instance cannot be explicitly persisted on initialization "+
               "if it has no data for its id attribute!");
           }
         }
-        else {
-          instance._isPersisted = true;
-        }
       }
 
       else {
-        instance._isPersisted = false;
+        instance._persisted = 0;
       }
 
-      if (instance._isPersisted && dataEmpty) {
+      if (instance._persisted > 0 && dataEmpty) {
         throw new ModelError('C006',
           "instance cannot be persisted on initialization if it has no data!");
       }
@@ -368,16 +360,18 @@ Model = (function () {
     }
   });
 
+  // COVERED!
   InstancePrototype.__defineGetter__('isPersisted', function () {
-    return this._isPersisted;
+    return this._persisted > 0;
   });
 
+  // COVERED!
   InstancePrototype.__defineGetter__('isNew', function () {
-    return !this.isPersisted &&
-      this._data[ this.constructor.idAttr ] === undefined;
+    // If instance has been persisted once, it is not new.
+    return this._persisted == 0;
   });
 
-  InstancePrototype.__defineGetter__('isChanged', function () {
+  InstancePrototype.__defineGetter__('hasChanged', function () {
     var changed = false;
     for (var k in this._changes) { changed = true; break; }
     return changed;
