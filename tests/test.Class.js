@@ -1,4 +1,4 @@
-module("Class attributes and methods", {
+module("Class.bind", {
   setup: function () {
     Cls = new Class($.noop);
   },
@@ -8,11 +8,8 @@ module("Class attributes and methods", {
 });
 
 
-test("Class.bind", function () {
-  var noop1 = new Function,
-    noop2 = new Function,
-    noop3 = new Function;
-
+test("should accept 2 arguments: a valid string eventName and a function eventHandler",
+function () {
   throws(function(){ Cls.bind(); },                    /C101/, "should fail if no arguments specified!");
   throws(function(){ Cls.bind(true); },                /C101/, "should fail if first argument is boolean true!");
   throws(function(){ Cls.bind(false); },               /C101/, "should fail if first argument is boolean false!");
@@ -37,6 +34,16 @@ test("Class.bind", function () {
   throws(function(){ Cls.bind('change', 'str'); },     /C101/, "should fail if second argument is not a function (string supplied)");
   throws(function(){ Cls.bind('change', /re/); },      /C101/, "should fail if second argument is not a function (regexp supplied)");
 
+  throws(function(){ Cls.bind('change', $.noop, 0); }, /C101/, "should fail when there are more than 2 arguments supplied");
+  throws(function(){ Cls.bind('cry', $.noop); },       /C101/, "should fail when an unknown event is being bound");
+});
+
+test("should act correctly",
+function () {
+  var noop1 = new Function,
+    noop2 = new Function,
+    noop3 = new Function;
+
   Cls.bind('initialize', noop1);
   deepEqual( Cls._callbacks, { initialize: [ noop1 ] },
     "should create _callbacks class attribute named after the event bound and "+
@@ -50,7 +57,7 @@ test("Class.bind", function () {
 
   Cls.bind('initialize', noop3);
   deepEqual( Cls._callbacks, { initialize: [ noop1, noop2, noop3 ] },
-    "if other callbacks where previously bound, should populate "+
+    "if other callbacks were previously bound, should populate "+
     "callbacks array for that event with the new callback (third)!");
 
   Cls.bind('change', noop1);
@@ -58,14 +65,8 @@ test("Class.bind", function () {
     "if a callback is bound to the other event, should create new "+
     "corresponding attribute array in _callbacks and push a bound callback into it!");
 
-  Cls.bind('change', noop3);
-  deepEqual( Cls._callbacks, { initialize: [ noop1, noop2, noop3 ], change: [ noop1, noop3 ] },
+  Cls.bind('change', noop1);
+  deepEqual( Cls._callbacks, { initialize: [ noop1, noop2, noop3 ], change: [ noop1, noop1 ] },
     "if a duplicate callback is being bound to the same event, "+
     "let it happen!");
 });
-
-
-// test("Class.validate", function () {
-//   // should fail unless 1 argument provided and that argument is an instance of self
-//   // should return object with attribute error arrays agains attribute names, also instance errors again `_instance` attribute
-// });

@@ -10,7 +10,7 @@ module("ModelConfigurator class properties", {
 });
 
 test("some general attributes should be set on a configured class", function () {
-  deepEqual( cls._rawAttributes,    [], '_rawAttributes');
+  deepEqual( cls._rawAttributes, [], '_rawAttributes');
   deepEqual( cls._validators,    {}, '_validators');
   deepEqual( cls._callbacks,     {}, '_callbacks');
   deepEqual( cls.errCodes,       {}, 'errCodes');

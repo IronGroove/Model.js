@@ -102,6 +102,7 @@ Model = (function () {
     });
   }
 
+  // COVERED!
   MC.processRawAttributes = function (rawAttributes) {
     var i, attrName, attr, validators, validatorName,
       attributes = {},
@@ -184,9 +185,11 @@ Model = (function () {
       }
 
       var instance = this,
+        cls = this.constructor,
         persistanceFlag,
         attrName,
         data,
+        dataEmpty = true,
         dataFn;
 
       if (arguments.length == 0) {
@@ -233,20 +236,47 @@ Model = (function () {
       instance._changes = {};
       instance._callbacks = {};
 
-      instance._isPersisted = typeof(persistanceFlag) == 'boolean' ?
-        persistanceFlag : !!data[Class.idAttr];
-
-      if (instance._isPersisted && data[Class.idAttr] === undefined) {
-        throw new ModelError('C005',
-          "instance cannot be explicitly persisted on creation "+
-          "if it has no id attribute set!");
-      }
-
       for (attrName in data) {
-        if (Class.attributeNames.indexOf(attrName) >= 0) {
+        if (cls.attributeNames.indexOf(attrName) >= 0) {
           instance._data[attrName] = data[attrName];
+          dataEmpty = false;
         }
       }
+
+      if (persistanceFlag === undefined) {
+        if (cls.idAttr) {
+          instance._isPersisted = !!data[cls.idAttr];
+        }
+        else {
+          instance._isPersisted = true;
+        }
+      }
+
+      else if (persistanceFlag) {
+        if (cls.idAttr) {
+          if (!!data[cls.idAttr]) {
+            instance._isPersisted = true;
+          }
+          else {
+            throw new ModelError('C005',
+              "instance cannot be explicitly persisted on initialization "+
+              "if it has no data for its id attribute!");
+          }
+        }
+        else {
+          instance._isPersisted = true;
+        }
+      }
+
+      else {
+        instance._isPersisted = false;
+      }
+
+      if (instance._isPersisted && dataEmpty) {
+        throw new ModelError('C006',
+          "instance cannot be persisted on initialization if it has no data!");
+      }
+
 
       instance._data2 = dataFn = function () {
         if (arguments.length == 1 && arguments[0] === undefined) {
@@ -290,14 +320,17 @@ Model = (function () {
   }
 
 
+  // COVERED!
   Class.prototype.bind = function (eventName, handler) {
     var Class = this;
-    if (typeof(eventName) != 'string' ||
-          Model._classEventNames.indexOf(eventName) == -1 ||
-            typeof(handler) != 'function') {
+    if (arguments.length != 2 ||
+          typeof(eventName) != 'string' ||
+            Model._classEventNames.indexOf(eventName) == -1 ||
+              typeof(handler) != 'function') {
       throw new ModelError('C101',
-        "Class.bind method should be provided with a valid "+
-        "string eventName and a function handler!");
+        "Class.bind accepts two arguments: a valid string eventName "+
+        "and a function eventHandler! "+
+        "Valid event names are: "+Model._classEventNames.join(',')+".");
     }
 
     if (Class._callbacks[eventName] === undefined) {
@@ -335,12 +368,13 @@ Model = (function () {
     }
   });
 
-  InstancePrototype.__defineGetter__('isNew', function () {
-    return this._data[ this.constructor.idAttr ] === undefined;
-  });
-
   InstancePrototype.__defineGetter__('isPersisted', function () {
     return this._isPersisted;
+  });
+
+  InstancePrototype.__defineGetter__('isNew', function () {
+    return !this.isPersisted &&
+      this._data[ this.constructor.idAttr ] === undefined;
   });
 
   InstancePrototype.__defineGetter__('isChanged', function () {
@@ -449,10 +483,7 @@ Model = (function () {
 
 
 
-  //
-  //
-  //
-
+  // COVERED!
   function Model(name, configuration) {
     if (this.constructor != Model) {
       throw new ModelError('M001',
@@ -488,17 +519,19 @@ Model = (function () {
   }
 
 
+  // COVERED!
   Model._classes = {};
   Model._validators = {};
   Model._classEventNames = 'initialize change'.split(' ');
   Model._instanceEventNames = 'change persist'.split(' ');
 
+  // COVERED!
   Model.errCodes = {};
   Model.errCodes.WRONG_TYPE = 'wrongtype';
   Model.errCodes.NULL = 'null';
   Model.errCodes.EMPTY = 'empty';
 
-
+  // COVERED!
   Model.registerValidator = function (name, fn) {
     if (typeof name != 'string' ||
           !name.match(/^[a-zA-Z]+$/) ||
@@ -514,22 +547,27 @@ Model = (function () {
   };
 
 
+  // COVERED!
   Model.registerValidator('number', function (value) {
     if (typeof(value) != 'number') return Model.errCodes.WRONG_TYPE;
   });
 
+  // COVERED!
   Model.registerValidator('string', function (value) {
     if (typeof(value) != 'string') return Model.errCodes.WRONG_TYPE;
   });
 
+  // COVERED!
   Model.registerValidator('boolean', function (value) {
     if (typeof(value) != 'boolean') return Model.errCodes.WRONG_TYPE;
   });
 
+  // COVERED!
   Model.registerValidator('nonnull', function (value) {
     if (value === null) return Model.errCodes.NULL;
   });
 
+  // COVERED!
   Model.registerValidator('nonempty', function (value) {
     if (typeof(value) != 'string') return;
     if (value === '') return Model.errCodes.EMPTY;
@@ -537,9 +575,7 @@ Model = (function () {
 
 
 
-  //
-  //
-  //
+  // Expose private functions for testing purposes.
 
   if (window && window.MODEL_JS_TEST_MODE) {
     window.ModelError = ModelError;
