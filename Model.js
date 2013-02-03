@@ -1,4 +1,4 @@
-// TODO Get rid of $.isPlainObject, $.trim and $.extend jQuery sugar.
+// TODO Get rid of $.isArray, $.isPlainObject, $.trim and $.extend jQuery sugar.
 // TODO Turn Class.attributeNames into an immutable getter.
 
 
@@ -21,7 +21,8 @@ Model = (function () {
     // - C0** Class constructor errors
     // - C1** Class class method errors
     // - C2** Class prototype method errors
-    // - MC1** ModelConfigurator prototype methods
+    // - MC1** ModelConfigurator class method errors
+    // - MC2** ModelConfigurator prototype method errors
 
     this.code = code;
     this.message = message;
@@ -38,8 +39,7 @@ Model = (function () {
   //
 
   function ModelConfigurator(cls) {
-    cls.attributeNames = [];
-    cls._attributes = {};
+    cls._rawAttributes = [];
 
     // A namespace for complex Class specific validators,
     // like if your domain ends with .dk, your region cannot be Asia.
@@ -53,45 +53,115 @@ Model = (function () {
 
     cls.prototype = cls.__proto__ = Class.prototype;
 
+    this.errCodes = cls.errCodes;
+
     this._cls = cls;
   }
 
   MC = ModelConfigurator;  // Just a convenience.
 
-  MC.prototype.attr = function (name, description, idAttrFlag) {
+  // COVERED!
+  MC.prototype.attr = function () {
     var Class = this._cls,
-      validators = [];
+      args = Array.prototype.slice.call(arguments),
+      attrDescription = args.shift(),
+      m, i,
+      attrData = {};
 
-    if (typeof(name) != 'string') {
-      throw new ModelError('MC101',
+    if (typeof(attrDescription) != 'string') {
+      throw new ModelError('MC201',
         "1st argument of a `attr` method should be a string!");
     }
 
-    if (Class.attributeNames.indexOf(name) >= 0) {
-      throw new ModelError('MC102',
-        "Attribute `"+name+"` is already added to "+Class.className+"!");
+    m = attrDescription.match(/^([a-z]+)(\!?)(\+?)$/i);
+    if (!m) {
+      throw new ModelError('MC202',
+        "The attribute description `"+attrDescription+"` is incorrect!");
     }
 
-    if (description && typeof(description) != 'string') {
-      throw new ModelError('MC103',
-        "2nd argument of `attr` method should be either omitted or a string!");
+    // Check if all supplied arguments after the 1st one are correct validator
+    // description.
+    for (i = 0; i < args.length; i++) {
+      switch (true) {
+        case typeof(args[i]) == 'function': break;
+        case typeof(args[i]) == 'string' && /^[a-z]+$/i.test(args[i]): break;
+        case $.isArray(args[i]) && args[i].length == 2 &&
+          typeof(args[i][0]) == 'string' && /^[a-z]+$/i.test(args[i][0]): break;
+        default:
+          throw new ModelError('MC203',
+            "Argument "+(i+1)+" in description of the `"+m[0]+"` "+
+            "attribute is not a correct validator!");
+        }
     }
 
-    if (description) {
-      description = $.trim(description);
-      validators = description.split(/\s+/);
+    Class._rawAttributes.push({
+      name:       m[1],
+      idAttr:     m[2] == '!',
+      required:   m[3] == '+',
+      validators: args
+    });
+  }
+
+  MC.processRawAttributes = function (rawAttributes) {
+    var i, attrName, attr, validators, validatorName,
+      attributes = {},
+      attributeValidators = {},
+      attributeNames = [],
+      requiredAttributes = [],
+      idAttributes = [],
+      idAttr;
+
+    // Remove duplicates in favour of the most recent description.
+    for (i = 0; i < rawAttributes.length; i++) {
+      attr = rawAttributes[i];
+      attributes[attr.name] = attr;
     }
 
-    if (!!idAttrFlag) {
-      if (Class.idAttr !== undefined) {
-        throw new ModelError('MC104',
-          "The idAttr is already added to "+Class.className+"!");
+    for (attrName in attributes) {
+      attributeNames.push(attrName);
+      if (attributes[attrName].required) requiredAttributes.push(attrName);
+      if (attributes[attrName].idAttr) idAttributes.push(attrName);
+      attributeValidators[attrName] = attributes[attrName].validators;
+    }
+
+
+    if (idAttributes.length > 1) {
+      throw new ModelError('MC101',
+        "Only one of the described attributes should be marked with "+
+        "the exlamation sign as an id attribute! "+
+        "But there are "+ idAttributes.length +": "+
+         idAttributes.join(',') + ".");
+    } else if (idAttributes.length == 1) {
+      idAttr = idAttributes[0];
+    }
+
+    for (attrName in attributeValidators) {
+      var validators = attributeValidators[attrName];
+      for (i = 0; i < validators.length; i++) {
+        switch (true) {
+          case typeof(validators[i]) == 'function': continue; break;
+          case $.isArray(validators[i]): validatorName = validators[i][0]; break;
+          default: validatorName = validators[i];
+        }
+        if (!Model._validators[validatorName]) {
+          throw new ModelError('MC102',
+            "Attributes, when described by name, should be described only with "+
+            "existing validators! "+
+            "Unknown validator `"+validatorName+"`!");
+        }
       }
-      Class.idAttr = name;
     }
 
-    Class.attributeNames.push(name);
-    Class._attributes[name] = validators;
+    if (idAttr && requiredAttributes.indexOf(idAttr) == -1) {
+      requiredAttributes.push(idAttr);
+    }
+
+    return {
+      idAttr: idAttr,
+      attributeNames: attributeNames,
+      requiredAttributes: requiredAttributes,
+      attributeValidators: attributeValidators
+    }
   }
 
 
@@ -103,7 +173,7 @@ Model = (function () {
   function Class(configuration) {
 
     var DataFunctionPrototype = {},
-      i,
+      i, attrData,
       configurator;
 
     function Class() {
@@ -190,6 +260,17 @@ Model = (function () {
 
     configurator = new ModelConfigurator(Class);
     configuration.call(configurator, configurator);
+
+    attrData = ModelConfigurator.processRawAttributes(Class._rawAttributes);
+
+    delete Class._rawAttributes;
+
+    Class.idAttr = attrData.idAttr;
+    Class.requiredAttributes = attrData.requiredAttributes;
+    Class.attributeNames = attrData.attributeNames;
+    Class.attributeValidators = attrData.attributeValidators;
+
+
 
     // Extend DataFunctionPrototype with attribute getters and setters.
     for (i = 0; i < Class.attributeNames.length; i++) {

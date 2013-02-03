@@ -1,4 +1,4 @@
-module("ModelConfigurator methods", {
+module("ModelConfigurator class properties", {
   setup: function () {
     cls = {};
     conf = new ModelConfigurator(cls);
@@ -10,46 +10,158 @@ module("ModelConfigurator methods", {
 });
 
 test("some general attributes should be set on a configured class", function () {
-  deepEqual( cls._attributes,    {}, '_attributes');
+  deepEqual( cls._rawAttributes,    [], '_rawAttributes');
   deepEqual( cls._validators,    {}, '_validators');
   deepEqual( cls._callbacks,     {}, '_callbacks');
-  deepEqual( cls.attributeNames, [], 'attributeNames');
   deepEqual( cls.errCodes,       {}, 'errCodes');
+  ok( cls.errCodes === conf.errCodes, 'errCodes should be by reference copied into the configurator');
 });
 
-test("attr should configure attributes on the class", function () {
-  // Should fail if 1st argument is not a string!
-  throws(function(){ conf.attr(); },          /MC101/, "should fail if 1st argument is omitted");
-  throws(function(){ conf.attr(undefined); }, /MC101/, "should fail if 1st argument is explicit undefined");
-  throws(function(){ conf.attr(null); },      /MC101/, "should fail if 1st argument is null");
-  throws(function(){ conf.attr(false); },     /MC101/, "should fail if 1st argument is boolean false");
-  throws(function(){ conf.attr(true); },      /MC101/, "should fail if 1st argument is boolean true");
-  throws(function(){ conf.attr(123345); },    /MC101/, "should fail if 1st argument is a number");
-  throws(function(){ conf.attr($.noop); },    /MC101/, "should fail if 1st argument is a function");
-  throws(function(){ conf.attr(/re/); },      /MC101/, "should fail if 1st argument is a regexp");
-  throws(function(){ conf.attr([]); },        /MC101/, "should fail if 1st argument is an array");
-  throws(function(){ conf.attr({}); },        /MC101/, "should fail if 1st argument is a plain object");
 
-  conf.attr('slug'); ok( cls.attributeNames.indexOf('slug') >= 0,
-    "should add attribute name to a `attributeNames` array if 1st argument is a string");
 
-  throws(function(){ conf.attr('slug'); }, /MC102/,
-    "should fail if attibute with that name has been already defined");
 
-  conf.attr('title', 'string nonempty nonnull');
-  deepEqual( cls._attributes.title, [ 'string', 'nonempty', 'nonnull' ],
-    "should remember validator names specified in attribute description string");
 
-  deepEqual( cls.attributeNames, [ 'slug', 'title' ]);
-
-  conf.attr('id', 'number', true);
-  ok( cls.idAttr == 'id');
-
-  deepEqual( cls.attributeNames, [ 'slug', 'title', 'id' ]);
-  deepEqual( cls._attributes.id, [ 'number' ]);
-  deepEqual( cls._attributes.title, [ 'string', 'nonempty', 'nonnull' ]);
-  deepEqual( cls._attributes.slug, []);
-
-  throws(function(){ conf.attr('otherId', 'number', true); }, /MC104/,
-    "should fail not allowing to define any other idAttr");
+module("ModelConfigurator#attr", {
+  setup: function () {
+    cls = {};
+    conf = new ModelConfigurator(cls);
+  },
+  teardown: function () {
+    delete cls;
+    delete conf;
+  }
 });
+
+test("should receive only a `id!+` like string as a 1st (attribute description) argument",
+function () {
+  throws(function(){ conf.attr(); },           /MC201/, "omitted");
+  throws(function(){ conf.attr(undefined); },  /MC201/, "undefined");
+  throws(function(){ conf.attr(null); },       /MC201/, "null");
+  throws(function(){ conf.attr(false); },      /MC201/, "false");
+  throws(function(){ conf.attr(true); },       /MC201/, "true");
+  throws(function(){ conf.attr(123345); },     /MC201/, "number");
+  throws(function(){ conf.attr(123.45); },     /MC201/, "number 2");
+  throws(function(){ conf.attr($.noop); },     /MC201/, "function");
+  throws(function(){ conf.attr(/re/); },       /MC201/, "regexp");
+  throws(function(){ conf.attr([]); },         /MC201/, "array");
+  throws(function(){ conf.attr({}); },         /MC201/, "plain object");
+  throws(function(){ conf.attr(''); },         /MC202/, "string: empty");
+  throws(function(){ conf.attr('str1ng'); },   /MC202/, "string: with a number");
+  throws(function(){ conf.attr('111111'); },   /MC202/, "string: numeric");
+  throws(function(){ conf.attr(' title'); },   /MC202/, "string: with whitespace");
+  throws(function(){ conf.attr('title '); },   /MC202/, "string: with whitespace 2");
+  throws(function(){ conf.attr('tit le'); },   /MC202/, "string: with whitespace 3");
+  throws(function(){ conf.attr('titl+e'); },   /MC202/, "string: plus in a wrong place");
+  throws(function(){ conf.attr('+title'); },   /MC202/, "string: plus in a wrong place 2");
+  throws(function(){ conf.attr('titl!e'); },   /MC202/, "string: exsign in a wrong place");
+  throws(function(){ conf.attr('!title'); },   /MC202/, "string: exsign in a wrong place 2");
+  throws(function(){ conf.attr('+'); },        /MC202/, "string: only plus");
+  throws(function(){ conf.attr('!'); },        /MC202/, "string: only exclamatory sign");
+  throws(function(){ conf.attr('+!'); },       /MC202/, "string: both signs");
+  throws(function(){ conf.attr('!+'); },       /MC202/, "string: both signs 2");
+  throws(function(){ conf.attr('title+!'); },  /MC202/, "string: signs wrong order");
+
+  conf.attr('title');   ok(true, "correct attribute description: single attribute name");
+  conf.attr('title!');  ok(true, "correct attribute description: attribute name with exsign");
+  conf.attr('title+');  ok(true, "correct attribute description: attribute name with plus");
+  conf.attr('title!+'); ok(true, "correct attribute description: attribute name with both signs");
+});
+
+test("all further arguments should be correct validators",
+function () {
+  throws(function(){ conf.attr('title', undefined); },       /MC203/, "undefined");
+  throws(function(){ conf.attr('title', null); },            /MC203/, "null");
+  throws(function(){ conf.attr('title', 123345); },          /MC203/, "number");
+  throws(function(){ conf.attr('title', 123.45); },          /MC203/, "number 2");
+  throws(function(){ conf.attr('title', false); },           /MC203/, "false");
+  throws(function(){ conf.attr('title', true); },            /MC203/, "true");
+  throws(function(){ conf.attr('title', /re/); },            /MC203/, "regexp");
+  throws(function(){ conf.attr('title', {}); },              /MC203/, "plain object");
+
+  throws(function(){ conf.attr('title', ''); },              /MC203/, "string: empty");
+  throws(function(){ conf.attr('title', 'str1ng'); },        /MC203/, "string: with a number");
+  throws(function(){ conf.attr('title', '111111'); },        /MC203/, "string: numeric");
+  throws(function(){ conf.attr('title', ' title'); },        /MC203/, "string: with whitespace");
+  throws(function(){ conf.attr('title', 'title '); },        /MC203/, "string: with whitespace 2");
+  throws(function(){ conf.attr('title', 'tit le'); },        /MC203/, "string: with whitespace 3");
+
+  throws(function(){ conf.attr('title', []); },              /MC203/, "array: empty");
+  throws(function(){ conf.attr('title', ['string']); },      /MC203/, "array: 1");
+  throws(function(){ conf.attr('title', ['string',1,2]); },  /MC203/, "array: 3");
+  throws(function(){ conf.attr('title', [undefined,1]); },   /MC203/, "array: 2 && [0] is undefined");
+  throws(function(){ conf.attr('title', [null,1]); },        /MC203/, "array: 2 && [0] is null");
+  throws(function(){ conf.attr('title', [false,1]); },       /MC203/, "array: 2 && [0] is false");
+  throws(function(){ conf.attr('title', [true,1]); },        /MC203/, "array: 2 && [0] is true");
+  throws(function(){ conf.attr('title', [123345,1]); },      /MC203/, "array: 2 && [0] is number");
+  throws(function(){ conf.attr('title', [123.45,1]); },      /MC203/, "array: 2 && [0] is number 2");
+  throws(function(){ conf.attr('title', ['1234',1]); },      /MC203/, "array: 2 && [0] is numeric string");
+  throws(function(){ conf.attr('title', [$.noop,1]); },      /MC203/, "array: 2 && [0] is function");
+  throws(function(){ conf.attr('title', [/re/,1]); },        /MC203/, "array: 2 && [0] is regexp");
+  throws(function(){ conf.attr('title', [[],1]); },          /MC203/, "array: 2 && [0] is array");
+  throws(function(){ conf.attr('title', [{},1]); },          /MC203/, "array: 2 && [0] is plain object");
+
+  throws(function(){ conf.attr('title', ['',1]); },          /MC203/, "array: 2 && [0:string] empty");
+  throws(function(){ conf.attr('title', ['string ',1]); },   /MC203/, "array: 2 && [0:string] contains whitespace");
+  throws(function(){ conf.attr('title', [' string',1]); },   /MC203/, "array: 2 && [0:string] contains whitespace 2");
+  throws(function(){ conf.attr('title', ['str ing',1]); },   /MC203/, "array: 2 && [0:string] contains whitespace 3");
+  throws(function(){ conf.attr('title', ['str1ng',1]); },    /MC203/, "array: 2 && [0:string] contains numbers");
+
+  conf.attr('title!', $.noop);            ok(true, "correct validator: function");
+  conf.attr('title', 'string');           ok(true, "correct validator: correct string validator name");
+  conf.attr('title+', ['minlength', 6]);  ok(true, "correct validator: 2-args array with [0] being a correct string validator name");
+});
+
+
+test("should produce correct results",
+function () {
+  conf.attr('title');
+  ok( cls._rawAttributes.length == 1, "should push attribute data objects to Class._attributes" );
+  deepEqual( cls._rawAttributes[0], { name: 'title', required: false, idAttr: false, validators: [] });
+
+  conf.attr('title+', 'abc', ['ab', 123], $.noop);
+  ok( cls._rawAttributes.length == 2, "should not replace data for previously described attribute with same name in Class._attributes" );
+  deepEqual( cls._rawAttributes[1], { name: 'title', required: true, idAttr: false, validators: ['abc', ['ab', 123], $.noop] });
+
+  conf.attr('title!', 'a', 'b');
+  ok( cls._rawAttributes.length == 3 );
+  deepEqual( cls._rawAttributes[2], { name: 'title', required: false, idAttr: true, validators: ['a', 'b'] });
+
+  conf.attr('title!+', 'string', $.noop);
+  ok( cls._rawAttributes.length == 4 );
+  deepEqual( cls._rawAttributes[3], { name: 'title', required: true, idAttr: true, validators: ['string', $.noop] });
+});
+
+
+
+
+
+module("ModelConfigurator.processRawAttributes");
+
+test("should fail when multiple attributes are flagged as id attribute",
+function () {
+  throws(function () {
+    var attrData = ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'nonempty'] },
+                                                            { name: 'slug',  required: false, idAttr: true, validators: ['string'] } ]);
+  }, /MC101/);
+});
+
+
+test("should fail when attributes described with unknown validators",
+function () {
+  throws(function () {
+    var attrData = ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'empty'] } ]);
+  }, /MC102/);
+});
+
+test("should remove duplicates in favour of the most recent declaration",
+function () {
+  var attrData = ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'nonempty'] },
+                                                          { name: 'slug',  required: true,  idAttr: false, validators: ['number'] },
+                                                          { name: 'slug',  required: false, idAttr: false, validators: ['string'] },
+                                                          { name: 'title', required: true, idAttr: false, validators: ['number'] } ]);
+  ok( attrData.idAttr === undefined );
+  deepEqual( attrData.requiredAttributes, [ 'title' ]);
+  deepEqual( attrData.attributeNames, [ 'title', 'slug' ]);
+  deepEqual( attrData.attributeValidators, { title: ['number'], slug: ['string'] });
+});
+

@@ -3,7 +3,9 @@ Models for javascripting.
     COUNTRIES = [ 'USA', 'Ukraine' ];
     LOCALES = [ 'en', 'uk' ];
 
-    var User = new Model('User', function (errCodes) {
+    var User = new Model('User', function () {
+
+      var errCodes = this.errCodes;
 
       errCodes.FORBIDDEN_AVATAR_HOST = 'forbiddenavatarhost';
       errCodes.INVALID_POSTAL_CODE = 'invalidpostalcode';

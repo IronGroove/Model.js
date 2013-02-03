@@ -1,7 +1,7 @@
 module("Instance creation", {
   setup:function(){
     Note = new Model('Note', function () {
-      this.attr('id', 'number', true);
+      this.attr('id!', 'number');
       this.attr('title', 'string');
     });
   },
@@ -11,18 +11,21 @@ module("Instance creation", {
   }
 });
 
-test("should fail if created without `new` keyword",function(){
+test("should fail if created without `new` keyword",
+function(){
   throws(function(){ var note = Note(); }, /C001/, 'throws exception without `new`' );
   var note = new Note();
   ok( true, 'passes with `new`');
 });
 
-test("shouldn't fail if receives nothing",function(){
+test("shouldn't fail if receives nothing",
+function(){
   var note = new Note;
   ok( true, 'passes when provided nothing');
 });
 
-test("should fail if Class constructor is passed 1 argument and it is neither boolean, nor data object",function(){
+test("should fail if Class constructor is passed 1 argument and it is neither boolean, nor data object",
+function(){
   throws(function(){ var note = new Note('abc'); },     /C002/, 'fails when receives a string' );
   throws(function(){ var note = new Note(12345); },     /C002/, 'fails when receives a number' );
   throws(function(){ var note = new Note([]); },        /C002/, 'fails when receives an array' );
@@ -37,7 +40,8 @@ test("should fail if Class constructor is passed 1 argument and it is neither bo
   ok( true, 'passes when receives a plain object');
 });
 
-test("should fail if receives 2 arguments and they are not a boolean with a plain object data",function(){
+test("should fail if receives 2 arguments and they are not a boolean with a plain object data",
+function(){
   throws(function(){ var note = new Note('abc', {}); },     /C003/, 'fails if first argument is not boolean' );
   throws(function(){ var note = new Note(true, 'abc'); },   /C003/, 'fails if second argument is not a plain object' );
 
@@ -45,11 +49,13 @@ test("should fail if receives 2 arguments and they are not a boolean with a plai
   ok( true, 'passes when 1st arg is boolean and second is plain object');
 });
 
-test("should fail if given more than 2 arguments",function(){
+test("should fail if given more than 2 arguments",
+function(){
   throws(function(){ var note = new Note(true, { title: "String" }, 1); }, /C004/, 'fails when 2 first arguments are correct and provided any 3rd argument' );
 });
 
-test("should fail if explicit persistance flag is true and no idAttr value is provided in data obj",function(){
+test("should fail if explicit persistance flag is true and no idAttr value is provided in data obj",
+function(){
   throws(function(){ var note = new Note(true, { title: 'abc'}); }, /C005/);
   throws(function(){ var note = new Note(true); },                  /C005/);
   throws(function(){ var note = new Note(true, {}); },              /C005/);
@@ -58,7 +64,8 @@ test("should fail if explicit persistance flag is true and no idAttr value is pr
   ok( true );
 });
 
-test("instance._data should become populated with data provided on creation",function(){
+test("instance._data should become populated with data provided on creation",
+function(){
   var note = new Note;
   ok( note.hasOwnProperty('_data'), 'instance gets own property _data created along with instance');
   ok( $.isPlainObject(note._data), 'instance._data is plain object');
@@ -86,7 +93,7 @@ test("instance._data should become populated with data provided on creation",fun
 module("Instance attributes and methods", {
   setup:function(){
     Note = new Model('Note', function () {
-      this.attr('id', 'number', true);
+      this.attr('id!', 'number');
       this.attr('title', 'string');
     });
   },
@@ -96,7 +103,8 @@ module("Instance attributes and methods", {
   }
 });
 
-test("instance.isNew getter should return boolean whether istance has idAttr set or not",function(){
+test("instance.isNew getter should return boolean whether istance has idAttr set or not",
+function(){
   ok( Note.prototype.__lookupGetter__('isNew'), 'isNew getter exists on Class');
 
   var note = new Note({ id: 123, title: 'abc' });
@@ -106,7 +114,8 @@ test("instance.isNew getter should return boolean whether istance has idAttr set
   ok( note.isNew, 'returns true if idAttr is NOT set');
 });
 
-test("instance.isPersisted",function(){
+test("instance.isPersisted",
+function(){
   ok( Note.prototype.__lookupGetter__('isPersisted'), 'isPersisted getter exists on Class');
 
   var note = new Note;
@@ -128,7 +137,8 @@ test("instance.isPersisted",function(){
   //! Add other tests ckecking things after note.persist() method call.
 });
 
-test("instance.isChanged",function(){
+test("instance.isChanged",
+function(){
   ok( Note.prototype.__lookupGetter__('isChanged'), 'isChanged getter exists on Class');
   var note = new Note({ id: 1212, title: "ABC" });
   ok( !note.isChanged, "persisting instance should not be changed right after initializing");
@@ -141,7 +151,8 @@ test("instance.isChanged",function(){
 });
 
 //!
-test("instance._changes should reflect currently changed attributes and their persisted values",function(){
+test("instance._changes should reflect currently changed attributes and their persisted values",
+function(){
   var note = new Note({ id: 1212, title: "ABC" });
 
   note.data.title = "NEW";
@@ -160,7 +171,8 @@ test("instance._changes should reflect currently changed attributes and their pe
   deepEqual( note._changes, {});
 });
 
-test("instance._get method should return actual attribute value if it is set",function(){
+test("instance._get method should return actual attribute value if it is set",
+function(){
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
 
@@ -170,7 +182,8 @@ test("instance._get method should return actual attribute value if it is set",fu
   ok( note._get('title') === 'abc' );
 });
 
-test("instance._set method should set a value of an attribute",function(){
+test("instance._set method should set a value of an attribute",
+function(){
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
 
@@ -178,7 +191,8 @@ test("instance._set method should set a value of an attribute",function(){
   ok( note._data.title === 'new' );
 });
 
-test("instance.data() should return actual data stored in a model instance",function(){
+test("instance.data() should return actual data stored in a model instance",
+function(){
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -189,7 +203,8 @@ test("instance.data() should return actual data stored in a model instance",func
   deepEqual( objectKeys(note.data()), Note.attributeNames, "keys in returned object should be same as Class attributes");
 });
 
-test("instance.get method should return actual attribute values",function(){
+test("instance.get method should return actual attribute values",
+function(){
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
 
@@ -211,7 +226,8 @@ test("instance.get method should return actual attribute values",function(){
   ok( ret.id === 123 && ret.title === 'abc', "returned object should have key-value pairs mirroring real attribute names and corresponding values");
 });
 
-test("instance.set method should set new attribute values",function(){
+test("instance.set method should set new attribute values",
+function(){
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -224,7 +240,8 @@ test("instance.set method should set new attribute values",function(){
 
 
 //!
-test("instance.data should be iterable and contain getters for all attributes",function(){
+test("instance.data should be iterable and contain getters for all attributes",
+function(){
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -240,7 +257,8 @@ test("instance.data should be iterable and contain getters for all attributes",f
   ok( note.data.title === 'abc');
 });
 
-test("instance.data should also contain setters for all attributes",function(){
+test("instance.data should also contain setters for all attributes",
+function(){
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -251,7 +269,8 @@ test("instance.data should also contain setters for all attributes",function(){
   ok( note.data.title === 'new');
 });
 
-test("instance.data= should be a setter for the instance to set multiple attribute values in the other way",function(){
+test("instance.data= should be a setter for the instance to set multiple attribute values in the other way",
+function(){
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -262,7 +281,8 @@ test("instance.data= should be a setter for the instance to set multiple attribu
 });
 
 
-test("instance.data= fails unless right-hand is a plain object",function(){
+test("instance.data= fails unless right-hand is a plain object",
+function(){
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
@@ -276,12 +296,14 @@ test("instance.data= fails unless right-hand is a plain object",function(){
   throws(function(){ note.data = []; },        /C003/, "fails if right-hand is an array");
 });
 
-test("instance._callbacks should be there",function(){
+test("instance._callbacks should be there",
+function(){
   var note = new Note({ id: 123, title: 'abc', text: 'text' });
   deepEqual( note._callbacks, {});
 });
 
-test("instance.bind",function(){
+test("instance.bind",
+function(){
   var note = new Note({ id: 123, title: 'abc', text: 'text' }),
     noop1 = new Function,
     noop2 = new Function,
@@ -338,7 +360,8 @@ test("instance.bind",function(){
     "let it happen!");
 });
 
-test("instance._trigger",function(){
+test("instance._trigger",
+function(){
   var strC = '', strI = '', strCI = '',
     note = new Note({ id: 123, title: "ABC" });
 
@@ -385,6 +408,7 @@ test("instance._trigger",function(){
   ok( result == '123ABC', "handler function should receive instance in a 1dt argument and in context");
 });
 
-test("instance.isValid",function(){
+test("instance.isValid",
+function(){
   ok( Note.prototype.__lookupGetter__('isValid'), 'isValid getter exists on Class');
 });

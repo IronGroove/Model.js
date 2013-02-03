@@ -64,11 +64,8 @@ test("Class.bind", function () {
     "let it happen!");
 });
 
-test("Class.registerValidator", function () {
 
-});
-
-test("Class.validate", function () {
-  // should fail unless 1 argument provided and that argument is an instance of self
-  // should return object with attribute error arrays agains attribute names, also instance errors again `_instance` attribute
-});
+// test("Class.validate", function () {
+//   // should fail unless 1 argument provided and that argument is an instance of self
+//   // should return object with attribute error arrays agains attribute names, also instance errors again `_instance` attribute
+// });
