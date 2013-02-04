@@ -23,6 +23,7 @@ Model = (function () {
     // - C2** Class prototype method errors
     // - MC1** ModelConfigurator class method errors
     // - MC2** ModelConfigurator prototype method errors
+    // - I2** InstancePrototype method errors
 
     this.code = code;
     this.message = message;
@@ -62,7 +63,7 @@ Model = (function () {
 
   // COVERED!
   MC.prototype.attr = function () {
-    var Class = this._cls,
+    var cls = this._cls,
       args = Array.prototype.slice.call(arguments),
       attrDescription = args.shift(),
       m, i,
@@ -94,7 +95,7 @@ Model = (function () {
         }
     }
 
-    Class._rawAttributes.push({
+    cls._rawAttributes.push({
       name:       m[1],
       idAttr:     m[2] == '!',
       required:   m[3] == '+',
@@ -269,7 +270,7 @@ Model = (function () {
           "instance cannot be persisted on initialization if it has no data!");
       }
 
-
+      // COVERED!
       instance._data2 = dataFn = function () {
         if (arguments.length == 1 && arguments[0] === undefined) {
           return instance;
@@ -293,7 +294,7 @@ Model = (function () {
     Class.attributeValidators = attrData.attributeValidators;
 
 
-
+    // COVERED!
     // Extend DataFunctionPrototype with attribute getters and setters.
     for (i = 0; i < Class.attributeNames.length; i++) {
       (function (attrName) {
@@ -314,7 +315,7 @@ Model = (function () {
 
   // COVERED!
   Class.prototype.bind = function (eventName, handler) {
-    var Class = this;
+    var cls = this;
     if (arguments.length != 2 ||
           typeof(eventName) != 'string' ||
             Model._classEventNames.indexOf(eventName) == -1 ||
@@ -325,11 +326,11 @@ Model = (function () {
         "Valid event names are: "+Model._classEventNames.join(',')+".");
     }
 
-    if (Class._callbacks[eventName] === undefined) {
-      Class._callbacks[eventName] = [];
+    if (cls._callbacks[eventName] === undefined) {
+      cls._callbacks[eventName] = [];
     }
 
-    Class._callbacks[eventName].push(handler);
+    cls._callbacks[eventName].push(handler);
   }
 
 
@@ -340,21 +341,23 @@ Model = (function () {
 
   var InstancePrototype = {};
 
+  // COVERED!
   InstancePrototype.__defineGetter__('data', function () {
     return this._data2;
   });
 
+  // COVERED!
   InstancePrototype.__defineSetter__('data', function (data) {
     if (!$.isPlainObject(data)) {
-      throw new ModelError('C003',
+      throw new ModelError('I201',
         "instance.data= setter accepts plain objects only!");
     }
 
-    var Class = this.constructor,
+    var cls = this.constructor,
       instance = this;
 
     for (var attrName in data) {
-      if (Class.attributeNames.indexOf(attrName) >= 0) {
+      if (cls.attributeNames.indexOf(attrName) >= 0) {
         instance._set(attrName, data[attrName]);
       }
     }
@@ -381,33 +384,18 @@ Model = (function () {
   InstancePrototype.__defineGetter__('isValid', function () {
   });
 
-  InstancePrototype.bind = function (eventName, handler) {
-    if (typeof(eventName) != 'string' ||
-          Model._instanceEventNames.indexOf(eventName) == -1 ||
-            typeof(handler) != 'function') {
-      throw new ModelError('I06',
-        "instance.bind method should be provided with a valid "+
-        "string eventName and a function handler!");
-    }
-
-    if (this._callbacks[eventName] === undefined) {
-      this._callbacks[eventName] = [];
-    }
-
-    this._callbacks[eventName].push(handler);
-  }
-
+  // COVERED!
   InstancePrototype.get = function (attr) {
     if (!arguments.length) {
       return this.data();
     }
 
-    var Class = this.constructor;
+    var cls = this.constructor;
 
     for (var i = 0; i < arguments.length; i++) {
       if (typeof(arguments[i]) != 'string' ||
-            Class.attributeNames.indexOf(arguments[i]) == -1) {
-        throw new ModelError('P01',
+            cls.attributeNames.indexOf(arguments[i]) == -1) {
+        throw new ModelError('I202',
           "instance.get method should be provided "+
           "valid attribute names only!");
       }
@@ -424,22 +412,25 @@ Model = (function () {
     return data;
   };
 
+  // COVERED!
   InstancePrototype.set = function (attrName, value) {
-    var Class = this.constructor;
+    var cls = this.constructor;
     if (typeof(attrName) != 'string' ||
-          Class.attributeNames.indexOf(attrName) == -1 ||
+          cls.attributeNames.indexOf(attrName) == -1 ||
             arguments.length != 2) {
-      throw new ModelError('P02',
-        "instance.set method should be provided two argument and first"+
+      throw new ModelError('I203',
+        "instance.set method should be provided two argument and first "+
         "of them should be a valid string attribute name!");
     }
     this._set(attrName, value);
   };
 
+  // COVERED!
   InstancePrototype._get = function (attrName) {
     return this._data[attrName];
   }
 
+  // COVERED!
   InstancePrototype._set = function (attrName, value) {
     if (this._data[attrName] !== value) {
       if (this._changes[attrName] === value) {
@@ -454,18 +445,36 @@ Model = (function () {
     }
   }
 
+  // COVERED!
+  InstancePrototype.bind = function (eventName, handler) {
+    if (typeof(eventName) != 'string' ||
+          Model._instanceEventNames.indexOf(eventName) == -1 ||
+            typeof(handler) != 'function') {
+      throw new ModelError('I204',
+        "instance.bind method should be provided with a valid "+
+        "string eventName and a function handler!");
+    }
+
+    if (this._callbacks[eventName] === undefined) {
+      this._callbacks[eventName] = [];
+    }
+
+    this._callbacks[eventName].push(handler);
+  }
+
+  // COVERED!
   InstancePrototype._trigger = function (eventName) {
-    var i, Class = this.constructor;
+    var i, cls = this.constructor;
     if (typeof(eventName) != 'string' ||
           Model._classEventNames.indexOf(eventName) == -1 ||
             Model._instanceEventNames.indexOf(eventName) == -1) {
-      throw new ModelError('I07',
+      throw new ModelError('I205',
         "instance._trigger should be provided a valid event name!");
     }
 
-    if (Class._callbacks[eventName]) {
-      for (i = 0; i < Class._callbacks[eventName].length; i++) {
-        Class._callbacks[eventName][i].call(this, this);
+    if (cls._callbacks[eventName]) {
+      for (i = 0; i < cls._callbacks[eventName].length; i++) {
+        cls._callbacks[eventName][i].call(this, this);
       }
     }
 

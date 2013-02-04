@@ -11,17 +11,19 @@ module("Instance creation", {
   }
 });
 
-test("should fail if created without `new` keyword",
+test("should be created with `new` keyword",
 function () {
   throws(function () { var note = Note(); }, /C001/, 'throws exception without `new`' );
-  var note = new Note();
-  ok( true, 'passes with `new`');
-});
 
-test("shouldn't fail if receives nothing",
-function () {
-  var note = new Note;
+  var note;
+
+  note = new Note();
+  ok( true, 'passes with `new`');
+
+  note = new Note;
   ok( true, 'passes when provided nothing');
+
+  deepEqual( note._callbacks, {}, "has _callbacks object upon creation");
 });
 
 test("should fail if Class constructor is passed 1 argument and it is neither a boolean, nor a data object",
@@ -371,33 +373,213 @@ function () {
 
 
 module("instance.hasChanged", {
+  setup: function () {
+    Note = new Model('Note', function () {
+      this.attr('id!', 'string');
+      this.attr('title', 'string');
+    });
+  },
   teardown:function () {
-    Model._classes = {};
+    delete Note;
+    delete Model._classes.Note;
   }
 });
 
-test("instance.hasChanged",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('id!', 'string');
-    this.attr('title', 'string');
-  });
 
+
+
+
+module("Instance", {
+  setup: function () {
+    Note = new Model('Note', function () {
+      this.attr('id!', 'string');
+      this.attr('title', 'string');
+    });
+  },
+  teardown:function () {
+    delete Note;
+    delete Model._classes.Note;
+  }
+});
+
+test("_get(attrName)",
+function () {
+  var noteData = { id: 123, title: 'abc' },
+    note = new Note(noteData);
+
+  ok( note._data.id === 123 );
+  ok( note._data.title === 'abc' );
+  ok( note._get('id') === 123 );
+  ok( note._get('title') === 'abc' );
+});
+
+test("_set(attrName, value)",
+function () {
+  var noteData = { id: 123, title: 'abc' },
+    note = new Note(noteData);
+
+  ok( note._set('title', 'new') === undefined, "_set should return nothing");
+  ok( note._data.title === 'new' );
+  deepEqual( note._changes, { title: "abc" });
+
+  note._set('title', 'NEW');
+  ok( note._data.title === 'NEW' );
+  deepEqual( note._changes, { title: "abc" });
+
+  note._set('title', 'abc');
+  ok( note._data.title === 'abc' );
+  deepEqual( note._changes, {});
+});
+
+
+test("data()",
+function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  ok( note.data(undefined) == note, "data(undefined) should return the instance");
+
+  ok( typeof(note.data) == 'function', "returned should be a function");
+  ok( note.data() !== note._data, "returned object shouldn't be a reference to a private _data property");
+  ok( note.data() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
+
+  deepEqual( objectKeys(note.data()), Note.attributeNames, "keys in returned object should be same as Class attributes");
+  deepEqual( note.data(), { id: 123, title: 'abc' }, "data() should return a copy of actual data");
+  deepEqual( note.data(123), { id: 123, title: 'abc' }, "data([anything other than undefined]) should return a copy of actual data");
+});
+
+test("data",
+function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  var keys = []; for (var k in note.data) keys.push(k);
+  deepEqual(keys, Note.attributeNames, "data is iterable and contains keys for all declared attributes");
+});
+
+test("data.[attrName]",
+function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  var keys = []; for (var k in note.data) keys.push(k);
+  deepEqual(keys, Note.attributeNames, "data is iterable and contain keys for all declared attributes");
+
+  for (var i = 0; i < Note.attributeNames.length; i++) {
+    ok( note.data.__lookupGetter__( Note.attributeNames[i] ),  Note.attributeNames[i]+' getter exists' );
+    ok( note.data[ Note.attributeNames[i] ] == noteData[ Note.attributeNames[i] ],  Note.attributeNames[i]+' getter value OK' );
+  }
+});
+
+test("data.[attrName]=",
+function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  for (var i = 0; i < Note.attributeNames.length; i++) {
+    ok( note.data.__lookupSetter__( Note.attributeNames[i] ),  Note.attributeNames[i]+'= setter exists' );
+    var rand = Math.random() * 99;
+    note.data[ Note.attributeNames[i] ] = rand;
+    ok( note._data[ Note.attributeNames[i] ] === rand,  Note.attributeNames[i]+'= setter works' );
+  }
+});
+
+test("data=",
+function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
+
+  throws(function () { note.data = 1234; },      /I201/, "fails if right-hand is a number");
+  throws(function () { note.data = null; },      /I201/, "fails if right-hand is null");
+  throws(function () { note.data = undefined; }, /I201/, "fails if right-hand is undefined");
+  throws(function () { note.data = true; },      /I201/, "fails if right-hand is boolean true");
+  throws(function () { note.data = false; },     /I201/, "fails if right-hand is boolean false");
+  throws(function () { note.data = $.noop; },    /I201/, "fails if right-hand is a function");
+  throws(function () { note.data = 'str'; },     /I201/, "fails if right-hand is a string");
+  throws(function () { note.data = []; },        /I201/, "fails if right-hand is an array");
+
+  var data1 = { id: 123, title: 'ABC' };
+  var data2 = { id: 456, title: 'abc' };
+  var data3 = { id: 567, title: 'Abc' };
+  var data4 = { id: 567, title: 'abc', text: 'Text' };
+
+  note.data = data1;
+  deepEqual( note.data(), data1 );
+  ok( note.data() !== data1 );
+
+  note.data = data2;
+  deepEqual( note.data(), data2 );
+  ok( note.data() !== data2 );
+
+  note.data = data3;
+  deepEqual( note.data(), data3 );
+  ok( note.data() !== data3 );
+
+  note.data = data4;
+  deepEqual( note.data(), { id: 567, title: 'abc' });
+});
+
+
+test("hasChanged",
+function () {
   ok( Note.prototype.__lookupGetter__('hasChanged'), 'hasChanged getter exists on Class');
 
-  var note = new Note({ id: 1212, title: "ABC" });
+  var note;
+
+
+  // persistence
+
+  note = new Note({ id: 1212, title: "ABC" });
   ok( !note.hasChanged, "persisting instance should not be changed right after initializing");
+
+  note = new Note(false, { id: 1212, title: "ABC" });
+  ok( !note.hasChanged, "non persisting instance should not be changed right after initializing");
+
+  note = new Note(true, { id: 1212, title: "ABC" });
+  ok( !note.hasChanged, "persisting instance should not be changed right after initializing 2");
+
+  note = new Note({ title: "ABC" });
+  ok( !note.hasChanged, "not persisting instance should not be changed right after initializing");
+
+  note = new Note(false, { title: "ABC" });
+  ok( !note.hasChanged, "not persisting instance should not be changed right after initializing");
+
+
+  // data.[attrName]= setter
+
+  note = new Note({ id: 1212, title: "ABC" });
+
   note.data.title = "NEW";
-  ok( note.hasChanged, "instance should be changed after changing any attribute value");
+  ok( note.hasChanged, "instance should be changed after changing any attribute value via data.[attrName]=");
 
   note.data.title = "ABC";
-  ok( !note.hasChanged, "instance should not be changed when old value is explicitly changed to the initial one");
+  ok( !note.hasChanged, "instance should not be changed when old value is explicitly changed to the initial one via data.[attrName]=");
+
+
+  // data= setter
+
+  note = new Note({ id: 1212, title: "ABC" });
+
+  note.data = { id: 1313, title: "ABC"};
+  ok( note.hasChanged, "instance should be changed after changing data via data=");
+
+  note.data = { id: 1212, title: "ABC"};
+  ok( !note.hasChanged, "instance should not be changed when old values are explicitly changed to the initial ones via data=");
+
+
+  // set
+
+  note = new Note({ id: 1212, title: "ABC" });
+
+  note.set('title', "NEW");
+  ok( note.hasChanged, "instance should be changed after changing data via set");
+
 });
 
 // TODO Add other tests ckecking instance.isPersisted after note.persist() and note.revert() method calls.
 
 
-test("instance._changes should reflect currently changed attributes and their persisted values",
+test("_changes should reflect currently changed attributes and their persisted values",
 function () {
   var note = new Note({ id: 1212, title: "ABC" });
 
@@ -418,72 +600,12 @@ function () {
 });
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-module("Instance attributes and methods", {
-  setup:function () {
-    Note = new Model('Note', function () {
-      this.attr('id!', 'number');
-      this.attr('title', 'string');
-    });
-  },
-  teardown:function () {
-    delete Note;
-    delete Model._classes.Note;
-  }
-});
-
-
-test("instance._get method should return actual attribute value if it is set",
+test("get(), get(attrName)",
 function () {
   var noteData = { id: 123, title: 'abc' },
     note = new Note(noteData);
 
-  ok( note._data.id === 123 );
-  ok( note._data.title === 'abc' );
-  ok( note._get('id') === 123 );
-  ok( note._get('title') === 'abc' );
-});
-
-test("instance._set method should set a value of an attribute",
-function () {
-  var noteData = { id: 123, title: 'abc' },
-    note = new Note(noteData);
-
-  ok( note._set('title', 'new') === undefined, "_set should return nothing");
-  ok( note._data.title === 'new' );
-});
-
-test("instance.data() should return actual data stored in a model instance",
-function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  ok( typeof note.data == 'function', "returned should be a function");
-  ok( note.data() !== note._data, "returned object shouldn't be a reference to a private _data property");
-  ok( note.data() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
-
-  deepEqual( objectKeys(note.data()), Note.attributeNames, "keys in returned object should be same as Class attributes");
-});
-
-test("instance.get method should return actual attribute values",
-function () {
-  var noteData = { id: 123, title: 'abc' },
-    note = new Note(noteData);
-
-  throws(function () { note.get(null, 1, 2); }, /P01/, "fails when any of provided attribute names is not a string");
-  throws(function () { note.get('slug'); }, /P01/, "fails when any of provided attribute names are not strings");
+  throws(function () { note.get(null, 1, 2); }, /I202/, "fails when any of provided attribute names is not a string");
 
   var ret = note.get();
   ok( $.isPlainObject(ret), "should return data object if no argument passed");
@@ -493,6 +615,7 @@ function () {
   ok( ret !== note._data, "returned data object should not be (by referecence) obj._data");
 
   ok( note.get('title') === 'abc', "should return single value when one attribute name is passed");
+  throws(function () { note.get('slug'); }, /I202/, "fails when any of provided attribute names is unknown");
 
   var ret = note.get('id', 'title');
   ok( $.isPlainObject(ret), "should return data object if more than one attribute name is passed");
@@ -500,112 +623,48 @@ function () {
   ok( ret.id === 123 && ret.title === 'abc', "returned object should have key-value pairs mirroring real attribute names and corresponding values");
 });
 
-test("instance.set method should set new attribute values",
+test("set(attrName, value)",
 function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
-  throws(function () { note.set(); }, /P02/, "should fail if no arguemnts provided");
-  throws(function () { note.set('title'); }, /P02/, "should fail if only attribute name provided");
-  throws(function () { note.set('slug', 123); }, /P02/, "should fail if attribute name provided is invalid");
+  throws(function () { note.set(); }, /I203/, "should fail if no arguments provided");
+  throws(function () { note.set('title'); }, /I203/, "should fail if only attribute name provided");
+  throws(function () { note.set('slug', 123); }, /I203/, "should fail if attribute name provided is invalid");
   ok( note.set('title', 'boom') === undefined, "should return undefined");
-  ok( note.get('title') == 'boom', "should change the value returned afterwards by the get method");
+  ok( note._data.title == 'boom', "should change the value returned afterwards by the get method");
 });
 
-
-//!
-test("instance.data should be iterable and contain getters for all attributes",
+test("bind(eventName, handler)",
 function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  var keys = [];
-  for (var k in note.data) keys.push(k);
-
-  deepEqual(keys, ['id', 'title']);
-
-  ok( note.data.__lookupGetter__('id') );
-  ok( note.data.id === 123);
-
-  ok( note.data.__lookupGetter__('title') );
-  ok( note.data.title === 'abc');
-});
-
-test("instance.data should also contain setters for all attributes",
-function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  ok( note.data.__lookupSetter__('id') );
-  ok( note.data.__lookupSetter__('title') );
-
-  note.data.title = 'new';
-  ok( note.data.title === 'new');
-});
-
-test("instance.data= should be a setter for the instance to set multiple attribute values in the other way",
-function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  note.data = { id: 321, title: "new" };
-
-  ok( note.data.id === 321 );
-  ok( note.data.title === 'new' );
-});
-
-
-test("instance.data= fails unless right-hand is a plain object",
-function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  throws(function () { note.data = 1234; },      /C003/, "fails if right-hand is a number");
-  throws(function () { note.data = null; },      /C003/, "fails if right-hand is null");
-  throws(function () { note.data = undefined; }, /C003/, "fails if right-hand is undefined");
-  throws(function () { note.data = true; },      /C003/, "fails if right-hand is boolean true");
-  throws(function () { note.data = false; },     /C003/, "fails if right-hand is boolean false");
-  throws(function () { note.data = $.noop; },    /C003/, "fails if right-hand is a function");
-  throws(function () { note.data = 'str'; },     /C003/, "fails if right-hand is a string");
-  throws(function () { note.data = []; },        /C003/, "fails if right-hand is an array");
-});
-
-test("instance._callbacks should be there",
-function () {
-  var note = new Note({ id: 123, title: 'abc', text: 'text' });
-  deepEqual( note._callbacks, {});
-});
-
-test("instance.bind",
-function () {
-  var note = new Note({ id: 123, title: 'abc', text: 'text' }),
+  var note = new Note({ id: 123, title: 'abc' }),
     noop1 = new Function,
     noop2 = new Function,
     noop3 = new Function;
 
-  throws(function () { note.bind(); },                    /I06/, "should fail if no arguments specified!");
-  throws(function () { note.bind(true); },                /I06/, "should fail if first argument is boolean true!");
-  throws(function () { note.bind(false); },               /I06/, "should fail if first argument is boolean false!");
-  throws(function () { note.bind(undefined); },           /I06/, "should fail if first argument is undefined!");
-  throws(function () { note.bind(1234); },                /I06/, "should fail if first argument is an number!");
-  throws(function () { note.bind(null); },                /I06/, "should fail if first argument is null!");
-  throws(function () { note.bind([]); },                  /I06/, "should fail if first argument is an array!");
-  throws(function () { note.bind({}); },                  /I06/, "should fail if first argument is an object!");
-  throws(function () { note.bind(/re/); },                /I06/, "should fail if first argument is a regexp!");
-  throws(function () { note.bind($.noop); },              /I06/, "should fail if first argument is a function!");
-  throws(function () { note.bind('string'); },            /I06/, "should fail if first argument is an unknown name!");
-  throws(function () { note.bind('str', $.noop); },       /I06/, "should fail if first argument is an unknown name though 2nd is a function!");
+  throws(function () { note.bind(); },                    /I204/, "should fail if no arguments specified!");
+  throws(function () { note.bind(true); },                /I204/, "should fail if first argument is boolean true!");
+  throws(function () { note.bind(false); },               /I204/, "should fail if first argument is boolean false!");
+  throws(function () { note.bind(undefined); },           /I204/, "should fail if first argument is undefined!");
+  throws(function () { note.bind(1234); },                /I204/, "should fail if first argument is an number!");
+  throws(function () { note.bind(null); },                /I204/, "should fail if first argument is null!");
+  throws(function () { note.bind([]); },                  /I204/, "should fail if first argument is an array!");
+  throws(function () { note.bind({}); },                  /I204/, "should fail if first argument is an object!");
+  throws(function () { note.bind(/re/); },                /I204/, "should fail if first argument is a regexp!");
+  throws(function () { note.bind($.noop); },              /I204/, "should fail if first argument is a function!");
+  throws(function () { note.bind('string'); },            /I204/, "should fail if first argument is an unknown name!");
+  throws(function () { note.bind('str', $.noop); },       /I204/, "should fail if first argument is an unknown name though 2nd is a function!");
 
-  throws(function () { note.bind('change'); },            /I06/, "should fail if second argument is omitted");
-  throws(function () { note.bind('change', true); },      /I06/, "should fail if second argument is not a function (true boolean supplied)");
-  throws(function () { note.bind('change', false); },     /I06/, "should fail if second argument is not a function (false boolean supplied)");
-  throws(function () { note.bind('change', undefined); }, /I06/, "should fail if second argument is not a function (undefined supplied)");
-  throws(function () { note.bind('change', 1234); },      /I06/, "should fail if second argument is not a function (number supplied)");
-  throws(function () { note.bind('change', null); },      /I06/, "should fail if second argument is not a function (null supplied)");
-  throws(function () { note.bind('change', []); },        /I06/, "should fail if second argument is not a function (array supplied)");
-  throws(function () { note.bind('change', {}); },        /I06/, "should fail if second argument is not a function (object supplied)");
-  throws(function () { note.bind('change', 'str'); },     /I06/, "should fail if second argument is not a function (string supplied)");
-  throws(function () { note.bind('change', /re/); },      /I06/, "should fail if second argument is not a function (regexp supplied)");
+  throws(function () { note.bind('change'); },            /I204/, "should fail if second argument is omitted");
+  throws(function () { note.bind('change', true); },      /I204/, "should fail if second argument is not a function (true boolean supplied)");
+  throws(function () { note.bind('change', false); },     /I204/, "should fail if second argument is not a function (false boolean supplied)");
+  throws(function () { note.bind('change', undefined); }, /I204/, "should fail if second argument is not a function (undefined supplied)");
+  throws(function () { note.bind('change', 1234); },      /I204/, "should fail if second argument is not a function (number supplied)");
+  throws(function () { note.bind('change', null); },      /I204/, "should fail if second argument is not a function (null supplied)");
+  throws(function () { note.bind('change', []); },        /I204/, "should fail if second argument is not a function (array supplied)");
+  throws(function () { note.bind('change', {}); },        /I204/, "should fail if second argument is not a function (object supplied)");
+  throws(function () { note.bind('change', 'str'); },     /I204/, "should fail if second argument is not a function (string supplied)");
+  throws(function () { note.bind('change', /re/); },      /I204/, "should fail if second argument is not a function (regexp supplied)");
 
   note.bind('change', noop1);
   deepEqual( note._callbacks, { change: [ noop1 ] },
@@ -634,23 +693,25 @@ function () {
     "let it happen!");
 });
 
-test("instance._trigger",
+test("_trigger(eventName)",
 function () {
+  // Abbreviations assume Class & Instance.
   var strC = '', strI = '', strCI = '',
     note = new Note({ id: 123, title: "ABC" });
 
   // should fail unless 1st argument is not a string name of a known event
-  throws(function () { note._trigger(); },          /I07/, "should fail if no arguments specified!");
-  throws(function () { note._trigger(true); },      /I07/, "should fail if first argument is boolean true!");
-  throws(function () { note._trigger(false); },     /I07/, "should fail if first argument is boolean false!");
-  throws(function () { note._trigger(undefined); }, /I07/, "should fail if first argument is undefined!");
-  throws(function () { note._trigger(1234); },      /I07/, "should fail if first argument is an number!");
-  throws(function () { note._trigger(null); },      /I07/, "should fail if first argument is null!");
-  throws(function () { note._trigger([]); },        /I07/, "should fail if first argument is an array!");
-  throws(function () { note._trigger({}); },        /I07/, "should fail if first argument is an object!");
-  throws(function () { note._trigger(/re/); },      /I07/, "should fail if first argument is a regexp!");
-  throws(function () { note._trigger($.noop); },    /I07/, "should fail if first argument is a function!");
-  throws(function () { note._trigger('string'); },  /I07/, "should fail if first argument is an unknown name!");
+  throws(function () { note._trigger(); },          /I205/, "should fail if no arguments specified");
+  throws(function () { note._trigger(true); },      /I205/, "should fail if first argument is boolean true");
+  throws(function () { note._trigger(false); },     /I205/, "should fail if first argument is boolean false");
+  throws(function () { note._trigger(undefined); }, /I205/, "should fail if first argument is undefined");
+  throws(function () { note._trigger(1234); },      /I205/, "should fail if first argument is an number");
+  throws(function () { note._trigger(null); },      /I205/, "should fail if first argument is null");
+  throws(function () { note._trigger([]); },        /I205/, "should fail if first argument is an array");
+  throws(function () { note._trigger({}); },        /I205/, "should fail if first argument is an object");
+  throws(function () { note._trigger(/re/); },      /I205/, "should fail if first argument is a regexp");
+  throws(function () { note._trigger($.noop); },    /I205/, "should fail if first argument is a function");
+  throws(function () { note._trigger('string'); },  /I205/, "should fail if first argument is an unknown name");
+
   note._trigger('change');
   ok (true, "should pass (should do nothing if a known event is triggered though no handlers were previousy bound)");
 
@@ -682,7 +743,10 @@ function () {
   ok( result == '123ABC', "handler function should receive instance in a 1dt argument and in context");
 });
 
-test("instance.isValid",
+
+
+
+test("isValid",
 function () {
   ok( Note.prototype.__lookupGetter__('isValid'), 'isValid getter exists on Class');
 });
