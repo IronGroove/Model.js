@@ -126,7 +126,7 @@ function () {
   note = new Note(false, {});
   ok( !note.isPersisted );
 
-  //NOTE This instance is considered new, as if it should be created with a known id.
+  // NOTE This instance is considered new, as if it should be created with a known id.
   note = new Note(false, { id: 1212 });
   ok( !note.isPersisted );
 
@@ -136,14 +136,17 @@ function () {
 
   throws(function () {
     note = new Note(true);
+    note.isPersisted;
   }, /C005/);
 
   throws(function () {
     note = new Note(true, {});
+    note.isPersisted;
   }, /C005/);
 
   throws(function () {
     note = new Note(true, { title: "Some" });
+    note.isPersisted;
   }, /C005/);
 
   note = new Note(true, { id: 1212 });
@@ -160,10 +163,12 @@ function () {
 
   throws(function () {
     note = new Note;
+    note.isPersisted;
   }, /C006/);
 
   throws(function () {
     note = new Note({});
+    note.isPersisted;
   }, /C006/);
 
   note = new Note({ title: "Some" });
@@ -181,17 +186,49 @@ function () {
 
   throws(function () {
     note = new Note(true);
+    note.isPersisted;
   }, /C006/);
 
   throws(function () {
     note = new Note(true, {});
+    note.isPersisted;
   }, /C006/);
 
   note = new Note(true, { title: "Some" });
   ok( note.isPersisted );
 });
 
-// TODO Add other tests ckecking instance.isPersisted after note.persist() method call.
+test("after being changed",
+function () {
+  var note, Note = new Model('Note', function () {
+    this.attr('slug', 'string');
+    this.attr('title', 'string');
+  });
+
+  note = new Note({ slug: "abc", title: "ABC" });
+  ok( note.isPersisted );
+  note.data.title = "Other";
+  ok( !note.isPersisted );
+  note.data.title = "ABC";
+  ok( note.isPersisted );
+
+  note = new Note(false, { slug: "abc", title: "ABC" });
+  ok( !note.isPersisted );
+  note.data.title = "Other";
+  ok( !note.isPersisted );
+  note.data.title = "ABC";
+  ok( !note.isPersisted );
+
+  note = new Note(true, { slug: "abc", title: "ABC" });
+  ok( note.isPersisted );
+  note.data.title = "Other";
+  ok( !note.isPersisted );
+  note.data.title = "ABC";
+  ok( note.isPersisted );
+});
+
+
+// TODO Add other tests ckecking instance.isPersisted after note.persist() and note.revert() method calls.
 
 
 
@@ -230,7 +267,7 @@ function () {
   note = new Note(false, {});
   ok( note.isNew );
 
-  //NOTE This instance is considered new, as if it should be created with a known id.
+  // NOTE This instance is considered new, as if it should be created with a known id.
   note = new Note(false, { id: 1212 });
   ok( note.isNew );
 
@@ -302,97 +339,83 @@ function () {
   ok( !note.isNew );
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+test("after being changed",
+function () {
+  var note, Note = new Model('Note', function () {
+    this.attr('slug', 'string');
+    this.attr('title', 'string');
+  });
+
+  note = new Note({ slug: "abc", title: "ABC" });
+  ok( !note.isNew );
+  note.data.title = "Other";
+  ok( !note.isNew );
+  note.data.title = "ABC";
+  ok( !note.isNew );
+
+  note = new Note(false, { slug: "abc", title: "ABC" });
+  ok( note.isNew );
+  note.data.title = "Other";
+  ok( note.isNew );
+  note.data.title = "ABC";
+  ok( note.isNew );
+
+  note = new Note(true, { slug: "abc", title: "ABC" });
+  ok( !note.isNew );
+  note.data.title = "Other";
+  ok( !note.isNew );
+  note.data.title = "ABC";
+  ok( !note.isNew );
+});
+
+
+
+module("instance.hasChanged", {
+  teardown:function () {
+    Model._classes = {};
+  }
+});
+
+test("instance.hasChanged",
+function () {
+  var note, Note = new Model('Note', function () {
+    this.attr('id!', 'string');
+    this.attr('title', 'string');
+  });
+
+  ok( Note.prototype.__lookupGetter__('hasChanged'), 'hasChanged getter exists on Class');
+
+  var note = new Note({ id: 1212, title: "ABC" });
+  ok( !note.hasChanged, "persisting instance should not be changed right after initializing");
+  note.data.title = "NEW";
+  ok( note.hasChanged, "instance should be changed after changing any attribute value");
+
+  note.data.title = "ABC";
+  ok( !note.hasChanged, "instance should not be changed when old value is explicitly changed to the initial one");
+});
+
+// TODO Add other tests ckecking instance.isPersisted after note.persist() and note.revert() method calls.
+
+
+test("instance._changes should reflect currently changed attributes and their persisted values",
+function () {
+  var note = new Note({ id: 1212, title: "ABC" });
+
+  note.data.title = "NEW";
+  deepEqual( note._changes, { title: "ABC" });
+
+  note.data.id = 123;
+  deepEqual( note._changes, { id: 1212, title: "ABC" });
+
+  note.data.id = 1234;
+  deepEqual( note._changes, { id: 1212, title: "ABC" });
+
+  note.data.id = 1212;
+  deepEqual( note._changes, { title: "ABC" });
+
+  note.data.title = "ABC"
+  deepEqual( note._changes, {});
+});
 
 
 
@@ -421,39 +444,6 @@ module("Instance attributes and methods", {
   }
 });
 
-test("instance.hasChanged",
-function () {
-  ok( Note.prototype.__lookupGetter__('hasChanged'), 'hasChanged getter exists on Class');
-  var note = new Note({ id: 1212, title: "ABC" });
-  ok( !note.hasChanged, "persisting instance should not be changed right after initializing");
-  note.data.title = "NEW";
-  ok( note.hasChanged, "instance should be changed after changing any attribute value");
-
-  note.data.title = "ABC";
-  ok( !note.hasChanged, "instance should not be changed when old value is explicitly changed to the initial one");
-  //! Add other tests checking things after note.revert() method.
-});
-
-//!
-test("instance._changes should reflect currently changed attributes and their persisted values",
-function () {
-  var note = new Note({ id: 1212, title: "ABC" });
-
-  note.data.title = "NEW";
-  deepEqual( note._changes, { title: "ABC" });
-
-  note.data.id = 123;
-  deepEqual( note._changes, { id: 1212, title: "ABC" });
-
-  note.data.id = 1234;
-  deepEqual( note._changes, { id: 1212, title: "ABC" });
-
-  note.data.id = 1212;
-  deepEqual( note._changes, { title: "ABC" });
-
-  note.data.title = "ABC"
-  deepEqual( note._changes, {});
-});
 
 test("instance._get method should return actual attribute value if it is set",
 function () {

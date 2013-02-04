@@ -362,7 +362,7 @@ Model = (function () {
 
   // COVERED!
   InstancePrototype.__defineGetter__('isPersisted', function () {
-    return this._persisted > 0;
+    return this._persisted > 0 && !this.hasChanged;
   });
 
   // COVERED!
@@ -371,6 +371,7 @@ Model = (function () {
     return this._persisted == 0;
   });
 
+  // COVERED!
   InstancePrototype.__defineGetter__('hasChanged', function () {
     var changed = false;
     for (var k in this._changes) { changed = true; break; }
