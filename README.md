@@ -38,10 +38,6 @@ Models for javascripting.
     });
 
 
-    Model.registerValidator('null', function (value) {
-      return true;
-    });
-
     Model.errCodes.INVALID_EMAIL = 'invalidemail';
     Model.registerValidator('email', function (value) {
       if (!isValidEmail(value)) return Model.errCodes.INVALID_EMAIL;

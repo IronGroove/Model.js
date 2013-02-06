@@ -21,7 +21,8 @@ test("_validators", function () {
   ok( $.isFunction(Model._validators.boolean),  'Model._validators.boolean'  );
   ok( $.isFunction(Model._validators.nonnull),  'Model._validators.nonnull'  );
   ok( $.isFunction(Model._validators.nonempty), 'Model._validators.nonempty' );
-  ok( objectSize(Model._validators) == 5,       'and nothing excess'         );
+  ok( $.isFunction(Model._validators.in),       'Model._validators.in'       );
+  ok( objectSize(Model._validators) == 6,       'and nothing excess'         );
 });
 
 test("errCodes", function () {
@@ -29,7 +30,8 @@ test("errCodes", function () {
   ok( Model.errCodes.WRONG_TYPE == 'wrongtype', 'Model.errCodes.WRONG_TYPE'  );
   ok( Model.errCodes.NULL == 'null',            'Model.errCodes.NULL'        );
   ok( Model.errCodes.EMPTY == 'empty',          'Model.errCodes.EMPTY'       );
-  ok( objectSize(Model.errCodes) == 3,          'and nothing excess'         );
+  ok( Model.errCodes.NOT_IN == 'notin',         'Model.errCodes.NOT_IN'      );
+  ok( objectSize(Model.errCodes) == 4,          'and nothing excess'         );
 });
 
 
@@ -77,6 +79,11 @@ test("nonempty", function () {
   // TODO Write tests for other types as well.
 });
 
+test("in", function () {
+  var validator = Model._validators.in;
+  ok( validator(123, [12, 34]) === Model.errCodes.NOT_IN, 'should return NOT_IN errCode having received an empty string argument' );
+  ok( validator(123, [123, 34]) === undefined,            'should return undefined having received a value that is also present in a 2nd arg array' );
+});
 
 
 

@@ -194,7 +194,9 @@ Model = (function () {
         dataFn;
 
       instance._data = {};
+      instance._errors = {};
       instance._changes = {};
+      instance._changesAfterValidation = {};
       instance._callbacks = {};
 
       if (arguments.length == 0) {
@@ -376,12 +378,9 @@ Model = (function () {
 
   // COVERED!
   InstancePrototype.__defineGetter__('hasChanged', function () {
-    var changed = false;
-    for (var k in this._changes) { changed = true; break; }
-    return changed;
-  });
-
-  InstancePrototype.__defineGetter__('isValid', function () {
+    // If any change, return true.
+    for (var k in this._changes) return true;
+    return false;
   });
 
   // COVERED!
@@ -432,6 +431,12 @@ Model = (function () {
 
   // COVERED!
   InstancePrototype._set = function (attrName, value) {
+    if (this._changesAfterValidation[attrName] === value) {
+      delete this._changesAfterValidation[attrName];
+    } else {
+      this._changesAfterValidation[attrName] = value;
+    }
+
     if (this._data[attrName] !== value) {
       if (this._changes[attrName] === value) {
         delete this._changes[attrName];
@@ -485,6 +490,73 @@ Model = (function () {
     }
   }
 
+  // COVERED!
+  InstancePrototype._validateAttr = function (attrName) {
+    var cls = this.constructor,
+      value = this._data[attrName],
+      validators = cls.attributeValidators[attrName],
+      i, err, validator;
+
+    if (value === null || value === undefined) {
+      if (cls.requiredAttributes.indexOf(attrName) >= 0) {
+        return Model.errCodes.NULL;
+      } else {
+        return;
+      }
+    }
+
+    for (i = 0; i < validators.length; i++) {
+      validator = validators[i];
+      if (typeof(validator) == 'string') {
+        err = Model._validators[validator](value);
+      } else if ($.isArray(validator)) {
+        err = Model._validators[validator[0]](value, validator[1]);
+      } else if (typeof(validator) == 'function') {
+        err = validator(value);
+      }
+
+      if (err !== undefined) {
+        return err;
+      }
+    }
+  };
+
+  // COVERED!
+  InstancePrototype._validate = function () {
+    var cls = this.constructor, errors = {},
+      i, attrName, err;
+
+    for (i = 0; i < cls.attributeNames.length; i++) {
+      attrName = cls.attributeNames[i];
+      err = this._validateAttr(attrName);
+      if (err !== undefined) errors[attrName] = err;
+    }
+
+    // If any error, return all.
+    for (i in errors) return errors;
+
+    return {};
+  }
+
+  // COVERED!
+  InstancePrototype.__defineGetter__('_hasChangedAfterValidation', function () {
+    for (var k in this._changesAfterValidation) return true;
+    return false;
+  });
+
+  InstancePrototype.__defineGetter__('errors', function () {
+    if (this._hasChangedAfterValidation) {
+      this._errors = this._validate();
+      this._changesAfterValidation = {};
+    }
+    return this._errors;
+  });
+
+  InstancePrototype.__defineGetter__('isValid', function () {
+    for (var k in this.errors) return false;
+    return true;
+  });
+
 
 
   // COVERED!
@@ -534,6 +606,7 @@ Model = (function () {
   Model.errCodes.WRONG_TYPE = 'wrongtype';
   Model.errCodes.NULL = 'null';
   Model.errCodes.EMPTY = 'empty';
+  Model.errCodes.NOT_IN = 'notin'
 
   // COVERED!
   Model.registerValidator = function (name, fn) {
@@ -577,6 +650,10 @@ Model = (function () {
     if (value === '') return Model.errCodes.EMPTY;
   });
 
+  // COVERED!
+  Model.registerValidator('in', function (value, values) {
+    if (values.indexOf(value) == -1) return Model.errCodes.NOT_IN;
+  });
 
 
   // Expose private functions for testing purposes.
