@@ -281,6 +281,8 @@ Model = (function () {
       }
 
       dataFn.prototype = dataFn.__proto__ = DataFunctionPrototype;
+
+      instance._trigger('initialize');
     }
 
     configurator = new ModelConfigurator(Class);
@@ -356,13 +358,18 @@ Model = (function () {
     }
 
     var cls = this.constructor,
-      instance = this;
+      instance = this,
+      changes = {};
 
     for (var attrName in data) {
       if (cls.attributeNames.indexOf(attrName) >= 0) {
-        instance._set(attrName, data[attrName]);
+        if (instance._set(attrName, data[attrName], false) === true) {
+          changes[attrName] = data[attrName];
+        }
       }
     }
+
+    this._trigger('change', changes);
   });
 
   // COVERED!
@@ -430,12 +437,10 @@ Model = (function () {
   }
 
   // COVERED!
-  InstancePrototype._set = function (attrName, value) {
-    if (this._changesAfterValidation[attrName] === value) {
-      delete this._changesAfterValidation[attrName];
-    } else {
-      this._changesAfterValidation[attrName] = value;
-    }
+  InstancePrototype._set = function (attrName, value, triggerChange) {
+    var change = {};
+
+    this._changesAfterValidation[attrName] = value;
 
     if (this._data[attrName] !== value) {
       if (this._changes[attrName] === value) {
@@ -447,7 +452,13 @@ Model = (function () {
         }
         this._data[attrName] = value;
       }
+      if (triggerChange !== false) {
+        change[attrName] = value;
+        this._trigger('change', change);
+      }
+      return true;
     }
+    return false;
   }
 
   // COVERED!
@@ -468,24 +479,28 @@ Model = (function () {
   }
 
   // COVERED!
-  InstancePrototype._trigger = function (eventName) {
-    var i, cls = this.constructor;
+  InstancePrototype._trigger = function () {
+    var i,
+      cls = this.constructor,
+      args = Array.prototype.slice.call(arguments),
+      eventName = args.shift();
+
     if (typeof(eventName) != 'string' ||
-          Model._classEventNames.indexOf(eventName) == -1 ||
-            Model._instanceEventNames.indexOf(eventName) == -1) {
+         !(Model._classEventNames.indexOf(eventName) >= 0 ||
+           Model._instanceEventNames.indexOf(eventName)  >= 0 )) {
       throw new ModelError('I205',
         "instance._trigger should be provided a valid event name!");
     }
 
     if (cls._callbacks[eventName]) {
       for (i = 0; i < cls._callbacks[eventName].length; i++) {
-        cls._callbacks[eventName][i].call(this, this);
+        cls._callbacks[eventName][i].apply(this, args);
       }
     }
 
     if (this._callbacks[eventName]) {
       for (i = 0; i < this._callbacks[eventName].length; i++) {
-        this._callbacks[eventName][i].call(this, this);
+        this._callbacks[eventName][i].apply(this, args);
       }
     }
   }
