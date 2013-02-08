@@ -559,6 +559,7 @@ Model = (function () {
     return false;
   });
 
+  // COVERED!
   InstancePrototype.__defineGetter__('errors', function () {
     if (this._hasChangedAfterValidation) {
       this._errors = this._validate();
@@ -567,10 +568,20 @@ Model = (function () {
     return this._errors;
   });
 
+  // COVERED!
   InstancePrototype.__defineGetter__('isValid', function () {
     for (var k in this.errors) return false;
     return true;
   });
+
+  // COVERED!
+  InstancePrototype._persist = function () {
+    if (this.hasChanged) {
+      this._changes = {};
+      this._changesAfterValidation = {};
+      this._trigger('persist');
+    }
+  };
 
 
 

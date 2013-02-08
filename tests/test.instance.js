@@ -93,7 +93,7 @@ function () {
 
 
 
-module("instance.isPersisted", {
+module("instance.isPersisted & instance.persist()", {
   teardown:function () {
     Model._classes = {};
   }
@@ -153,6 +153,23 @@ function () {
 
   note = new Note(true, { id: 1212 });
   ok( note.isPersisted );
+
+
+
+  var persisted = 0;
+  note.bind('persist', function () {
+    persisted += 1;
+  });
+
+  note.data.title = "New";
+  ok( !note.isPersisted );
+  note._persist();
+  ok( persisted == 1, "persist event should be triggered" );
+  ok( note.isPersisted, "instance should become persisted after _perstst method call" );
+
+  note._persist();
+  ok( persisted == 1, "persist event should not be triggered if there were no changes" );
+  ok( note.isPersisted, "instance should stay persisted in that case too" );
 });
 
 test("when no idAttr is set",
@@ -198,6 +215,20 @@ function () {
 
   note = new Note(true, { title: "Some" });
   ok( note.isPersisted );
+
+
+  var persisted = 0;
+  note.bind('persist', function () { persisted += 1; });
+
+  note.data.title = "New";
+  ok( !note.isPersisted );
+  note._persist();
+  ok( persisted == 1, "persist event should be triggered" );
+  ok( note.isPersisted, "instance should become persisted after _perstst method call" );
+
+  note._persist();
+  ok( persisted == 1, "persist event should not be triggered if there were no changes" );
+  ok( note.isPersisted, "instance should stay persisted in that case too" );
 });
 
 test("after being changed",
