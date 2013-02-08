@@ -428,7 +428,7 @@ Model = (function () {
         "instance.set method should be provided two argument and first "+
         "of them should be a valid string attribute name!");
     }
-    this._set(attrName, value);
+    this._set(attrName, value, false);
   };
 
   // COVERED!
