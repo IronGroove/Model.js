@@ -109,7 +109,7 @@ test("_changesAfterValidation should reflect currently changed attributes and th
 function () {
   var note = new Note({ id: 1212, title: "ABC" });
 
-  deepEqual( note._changesAfterValidation, {}, "new instances should have _hasChangedAfterValidation property");
+  deepEqual( note._changesAfterValidation, true, "new instances should have _hasChangedAfterValidation property equal to true");
 
   note.data.title = "NEW";
   deepEqual( note._changesAfterValidation, { title: "NEW" });

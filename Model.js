@@ -195,9 +195,11 @@ Model = (function () {
 
       instance._data = {};
       instance._errors = {};
-      instance._changes = {};
-      instance._changesAfterValidation = {};
       instance._callbacks = {};
+      instance._changes = {};
+
+      // Pretend that instance is not validated, so that it could be.
+      instance._changesAfterValidation = true;
 
       if (arguments.length == 0) {
         data = {};
@@ -440,6 +442,7 @@ Model = (function () {
   InstancePrototype._set = function (attrName, value, triggerChange) {
     var change = {};
 
+    if (this._changesAfterValidation === true) this._changesAfterValidation = {};
     this._changesAfterValidation[attrName] = value;
 
     if (this._data[attrName] !== value) {
@@ -555,6 +558,7 @@ Model = (function () {
 
   // COVERED!
   InstancePrototype.__defineGetter__('_hasChangedAfterValidation', function () {
+    if (this._changesAfterValidation === true) return true;
     for (var k in this._changesAfterValidation) return true;
     return false;
   });
@@ -673,7 +677,7 @@ Model = (function () {
   // COVERED!
   Model.registerValidator('nonempty', function (value) {
     if (typeof(value) != 'string') return;
-    if (value === '') return Model.errCodes.EMPTY;
+    if (value.length == 0) return Model.errCodes.EMPTY;
   });
 
   // COVERED!
