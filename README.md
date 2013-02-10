@@ -1,5 +1,6 @@
 Models for javascripting.
 
+
     COUNTRIES = [ 'USA', 'Ukraine' ];
     LOCALES = [ 'en', 'uk' ];
 
@@ -29,12 +30,16 @@ Models for javascripting.
     });
 
     var Note = new Mode('Note', function () {
-      this.attr('id!', 'number', 'nonnull');
+      this.attr('id!',    'number');
       this.attr('title+', 'string', ['minlength', 8]);
 
       this.beforeValidation(function () {
         this.data.title = $.trim(this.data.title);
       });
+    });
+
+    Note.bind('beforeValidate', function () {
+      this.data.title = $.trim(this.data.title);
     });
 
 
@@ -48,23 +53,23 @@ Models for javascripting.
     Note(1) // Returns an instance if it is initialized or undefined if instance hasn't been initialized.
 
     // Few examples on instances which need to be created with ids known in advance.
-    new Note({…})                  // not persisted:  isNew == true   hasChanged == false  isPersisted=false
-    new Note({ id: 123, …})        // persisted:      isNew == false  hasChanged == false  isPersisted=true
-    new Note(false, { id: 123, …}) // not persisted:  isNew == true   hasChanged == false  isPersisted=false
+    new Note({…})                  // isNew == true   isPersisted == false
+    new Note({ id: 123, …})        // isNew == false  isPersisted == true
+    new Note(false, { id: 123, …}) // isNew == true   isPersisted == false
 
     var note = new Note({ title: "Unknown" });
-    note.isNew     // true
-    note.hasChanged // false
+    note.isNew                        // true
+    note.hasChanged                   // false
     note.data.title = "Abecedario";
-    note.hasChanged // true
+    note.hasChanged                   // true
     note.revert();
-    note.hasChanged // false
+    note.hasChanged                   // false
     note.data.title = "Alphabet";
-    note.hasChanged // true
-    note._changes  // { title: "Unknown" }
-    note.isValid   // true, calls note._validate()
-    note.save();   // should call note._persist() when instance persisted or note._rollback() if shit happened
-    note.hasChanged // false
+    note.hasChanged                   // true
+    note._changes                     // { title: "Unknown" }
+    note.isValid                      // true
+    note.save();                      // should call note._persist() when instance persisted or note._revert() if shit happened
+    note.hasChanged                   // false
 
     // Set up event handlers related to all instances of a Model class.
     Note.bind('initialize', handler);
@@ -73,6 +78,11 @@ Models for javascripting.
     // Set up event handlers related to a specific instance.
     note.bind('change', handler);
     note.bind('revert', handler);
-    note.bind('save', handler);
     note.bind('persist', handler);
-    note.bind('rollback', handler);
+
+
+TODO
+
+- beforeValidate event
+- revert() and revert event
+- Model.dispose('Note', id)

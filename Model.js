@@ -182,7 +182,7 @@ Model = (function () {
 
       if (this.constructor != Class) {
         throw new ModelError('C001',
-          "Model Class instances should be created with keyword `new`!");
+          "Instances should be created with keyword `new`!");
       }
 
       var instance = this,
@@ -315,6 +315,12 @@ Model = (function () {
       })(Class.attributeNames[i]);
     }
 
+
+    var Mediator = new Function;
+    Mediator.prototype = InstancePrototype;
+    Class.prototype = new Mediator;
+    Class.prototype.constructor = Class;
+
     return Class;
   }
 
@@ -339,6 +345,77 @@ Model = (function () {
     cls._callbacks[eventName].push(handler);
   }
 
+  Class.prototype.validate = function () {
+    var cls = this, instance, attrName, value;
+
+    if (arguments.length == 0 || arguments.length > 2) {
+      throw new ModelError('C102',
+        "Class.validate accepts either 1 argument, a model instance "+
+        "of same Class, or 2 arguments, a valid string attribute name "+
+        "and its a value to validate!");
+    }
+
+    else if (arguments.length == 1) {
+      instance = arguments[0];
+
+      if (instance.constructor !== cls) {
+        throw new ModelError('C103',
+          "Provided argument is not an instance of same class! "+
+          "("+cls.className+")");
+      }
+
+      var errors = {},
+        i, attrName, err;
+
+      for (i = 0; i < cls.attributeNames.length; i++) {
+        attrName = cls.attributeNames[i];
+        err = this.validate(attrName, instance.data[attrName]);
+        if (err !== undefined) errors[attrName] = err;
+      }
+
+      // If any error, return all.
+      for (i in errors) return errors;
+
+      return {};
+    }
+
+    else if (arguments.length == 2) {
+      attrName = arguments[0];
+      value = arguments[1];
+
+      if (this.attributeNames.indexOf(attrName) == -1) {
+        throw new ModelError('C104',
+          "Class.validate accepts two arguments: a valid string attributeName "+
+          "and a value to validate!");
+      }
+
+      var validators = cls.attributeValidators[attrName],
+        i, err, validator;
+
+      if (value === null || value === undefined) {
+        if (cls.requiredAttributes.indexOf(attrName) >= 0) {
+          return Model.errCodes.NULL;
+        } else {
+          return;
+        }
+      }
+
+      for (i = 0; i < validators.length; i++) {
+        validator = validators[i];
+        if (typeof(validator) == 'string') {
+          err = Model._validators[validator](value);
+        } else if ($.isArray(validator)) {
+          err = Model._validators[validator[0]](value, validator[1]);
+        } else if (typeof(validator) == 'function') {
+          err = validator(value);
+        }
+
+        if (err !== undefined) {
+          return err;
+        }
+      }
+    }
+  };
 
 
   //
@@ -509,54 +586,6 @@ Model = (function () {
   }
 
   // COVERED!
-  InstancePrototype._validateAttr = function (attrName) {
-    var cls = this.constructor,
-      value = this._data[attrName],
-      validators = cls.attributeValidators[attrName],
-      i, err, validator;
-
-    if (value === null || value === undefined) {
-      if (cls.requiredAttributes.indexOf(attrName) >= 0) {
-        return Model.errCodes.NULL;
-      } else {
-        return;
-      }
-    }
-
-    for (i = 0; i < validators.length; i++) {
-      validator = validators[i];
-      if (typeof(validator) == 'string') {
-        err = Model._validators[validator](value);
-      } else if ($.isArray(validator)) {
-        err = Model._validators[validator[0]](value, validator[1]);
-      } else if (typeof(validator) == 'function') {
-        err = validator(value);
-      }
-
-      if (err !== undefined) {
-        return err;
-      }
-    }
-  };
-
-  // COVERED!
-  InstancePrototype._validate = function () {
-    var cls = this.constructor, errors = {},
-      i, attrName, err;
-
-    for (i = 0; i < cls.attributeNames.length; i++) {
-      attrName = cls.attributeNames[i];
-      err = this._validateAttr(attrName);
-      if (err !== undefined) errors[attrName] = err;
-    }
-
-    // If any error, return all.
-    for (i in errors) return errors;
-
-    return {};
-  }
-
-  // COVERED!
   InstancePrototype.__defineGetter__('_hasChangedAfterValidation', function () {
     if (this._changesAfterValidation === true) return true;
     for (var k in this._changesAfterValidation) return true;
@@ -566,7 +595,7 @@ Model = (function () {
   // COVERED!
   InstancePrototype.__defineGetter__('errors', function () {
     if (this._hasChangedAfterValidation) {
-      this._errors = this._validate();
+      this._errors = this.constructor.validate(this);
       this._changesAfterValidation = {};
     }
     return this._errors;
@@ -608,15 +637,9 @@ Model = (function () {
         'A Model with that name already exists!');
     }
 
-    var cls = new Class(configuration),
-      Mediator;
+    var cls = new Class(configuration);
 
     // TODO Sanity checks.
-
-    Mediator = new Function;
-    Mediator.prototype = InstancePrototype;
-    cls.prototype = new Mediator;
-    cls.prototype.constructor = cls;
 
     cls.className = name;
     Model._classes[name] = cls;
