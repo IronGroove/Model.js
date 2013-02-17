@@ -1,87 +1,77 @@
 Models for javascripting.
 
 
-    COUNTRIES = [ 'USA', 'Ukraine' ];
-    LOCALES = [ 'en', 'uk' ];
+# Create
 
-    var User = new Model('User', function () {
+Define your data models in a simple readable way.
 
-      var errCodes = this.errCodes;
+```javascript
+var Note = new Model('Note', function () {
+  this.attr('id!', 'number');
+  this.attr('title+', 'string', [ 'minlength', 8 ]);
+  this.attr('text', 'string');
+});
+```
 
-      errCodes.FORBIDDEN_AVATAR_HOST = 'forbiddenavatarhost';
-      errCodes.INVALID_POSTAL_CODE = 'invalidpostalcode';
+# Work
 
-      this.attr('id!+',         'number');
-      this.attr('displayName+', 'string', 'nonempty');
-      this.attr('email+',       'string', 'email');
-      this.attr('country+',     'string', ['in', COUNTRIES]);
-      this.attr('locale',       'string', 'nonempty', ['in', LOCALES]);  // may be null
-      this.attr('postalCode+',  'string', 'nonempty');
-      this.attr('avatarUrl+',   'string', 'url', function (value) {
-        var host = hostFromURL(value);
-        if (host != 'gravatar.com') return errCodes.FORBIDDEN_AVATAR_HOST;
-      });
+Get syntactical sugar for working with your data.
 
-      this.validates(function (data) {
-        if (!validatePostalCode(data.postalCode, data.country) {
-          return errCodes.INVALID_POSTAL_CODE;
-        }
-      });
-    });
-
-    var Note = new Mode('Note', function () {
-      this.attr('id!',    'number');
-      this.attr('title+', 'string', ['minlength', 8]);
-
-      this.beforeValidation(function () {
-        this.data.title = $.trim(this.data.title);
-      });
-    });
-
-    Note.bind('beforeValidate', function () {
-      this.data.title = $.trim(this.data.title);
-    });
+```javascript
+var note = new Note({ title: "Model.js is awesome" });
+note.data.title = '';
+note.isNew // true
+note.hasChanged // false
+```
 
 
-    Model.errCodes.INVALID_EMAIL = 'invalidemail';
-    Model.registerValidator('email', function (value) {
-      if (!isValidEmail(value)) return Model.errCodes.INVALID_EMAIL;
-    });
+Enjoy easy one-method data validation according to attribute definitions.
+
+```javascript
+note.isValid // false
+note.errors  // { title: Model.errCodes.TOO_SHORT }
+```
 
 
+# Extend
 
-    Note(1) // Returns an instance if it is initialized or undefined if instance hasn't been initialized.
+Extend your models for purposes of your application via prototype.
 
-    // Few examples on instances which need to be created with ids known in advance.
-    new Note({…})                  // isNew == true   isPersisted == false
-    new Note({ id: 123, …})        // isNew == false  isPersisted == true
-    new Note(false, { id: 123, …}) // isNew == true   isPersisted == false
+For example, set up your specific way of persisting the data.
 
-    var note = new Note({ title: "Unknown" });
-    note.isNew                        // true
-    note.hasChanged                   // false
-    note.data.title = "Abecedario";
-    note.hasChanged                   // true
-    note.revert();
-    note.hasChanged                   // false
-    note.data.title = "Alphabet";
-    note.hasChanged                   // true
-    note._changes                     // { title: "Unknown" }
-    note.isValid                      // true
-    note.save();                      // should call note._persist() when instance persisted or note._revert() if shit happened
-    note.hasChanged                   // false
-
-    // Set up event handlers related to all instances of a Model class.
-    Note.bind('initialize', handler);
-    Note.bind('beforeValidate', handler);
-
-    // Set up event handlers related to a specific instance.
-    note.bind('change', handler);
-    note.bind('revert', handler);
-    note.bind('persist', handler);
+```javascript
+Note.prototype.save = function () {
+  var note = this, data = note.data();
+  window.localStorage.setItem("Note:"+data.id, JSON.stringify(data));
+  note._persist();
+}
+```
 
 
-TODO
+# Integrate
+
+Have all the event machinery at your disposal.
+
+Bind event handlers to specific instances.
+
+```javascript
+note.bind('change', function (changes) {
+  if (changes.title) alert("Title changed!");
+});
+```
+
+Or bind handlers to classes, so that they become common to all instances.
+
+```javascript
+Note.bind('initialize', function () {
+  if (this.data.id) {
+    alert("Note #"+this.data.id+" is initialized!");
+  }
+});
+```
+
+
+# TODO
 
 - beforeValidate event
 - revert() and revert event
