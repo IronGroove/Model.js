@@ -22,7 +22,7 @@ test("_validators", function () {
   ok( $.isFunction(Model._validators.nonnull),  'Model._validators.nonnull'  );
   ok( $.isFunction(Model._validators.nonempty), 'Model._validators.nonempty' );
   ok( $.isFunction(Model._validators.in),       'Model._validators.in'       );
-  ok( objectSize(Model._validators) == 6,       'and nothing excess'         );
+  ok( objectSize(Model._validators) == 6,       'and nothing else'           );
 });
 
 test("errCodes", function () {
@@ -31,14 +31,14 @@ test("errCodes", function () {
   ok( Model.errCodes.NULL == 'null',            'Model.errCodes.NULL'        );
   ok( Model.errCodes.EMPTY == 'empty',          'Model.errCodes.EMPTY'       );
   ok( Model.errCodes.NOT_IN == 'notin',         'Model.errCodes.NOT_IN'      );
-  ok( objectSize(Model.errCodes) == 4,          'and nothing excess'         );
+  ok( objectSize(Model.errCodes) == 4,          'and nothing else'           );
 });
 
 
 
 
 
-module("Model class attributes: _validators");
+module("Model class attributes # _validators");
 
 test("string", function () {
   var validator = Model._validators.string;
@@ -88,7 +88,7 @@ test("in", function () {
 
 
 
-module("Model class methods: registerValidator", {
+module("Model class methods # registerValidator", {
   setup: function () {
     this._initialModelValidators = $.extend({}, Model._validators);
   },
@@ -124,7 +124,7 @@ test("fails unless 2nd argument is function", function () {
   throws(function(){ Model.registerValidator('string', /re/); },      /M101/, 'regexp');
 
   Model.registerValidator('some', $.noop);
-  ok(true, 'passes if 2nd argument is function');
+  ok(true, 'passes if 1st argument is string 2nd argument is function');
 });
 
 test("fails if validator with that name already exists", function () {

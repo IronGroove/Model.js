@@ -7,11 +7,6 @@ Model = (function () {
   var MC;
 
 
-
-  //
-  //
-  //
-
   function ModelError(code, message) {
 
     // ModelError codes stick to the following convention:
@@ -34,10 +29,6 @@ Model = (function () {
   }
 
 
-
-  //
-  //
-  //
 
   function ModelConfigurator(cls) {
     cls._rawAttributes = [];
@@ -167,10 +158,6 @@ Model = (function () {
   }
 
 
-
-  //
-  //
-  //
 
   function Class(configuration) {
 
@@ -418,9 +405,6 @@ Model = (function () {
   };
 
 
-  //
-  //
-  //
 
   var InstancePrototype = {};
 
@@ -623,6 +607,8 @@ Model = (function () {
     if (this.constructor != Model) {
       throw new ModelError('M001',
         "New models should be created with keyword `new`!");
+    } else {
+      // TODO Return Model found by name.
     }
 
     if (typeof(name) != 'string' ||
@@ -709,7 +695,7 @@ Model = (function () {
   });
 
 
-  // Expose private functions for testing purposes.
+  // Expose private functions for testing.
 
   if (window && window.MODEL_JS_TEST_MODE) {
     window.ModelError = ModelError;
