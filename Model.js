@@ -30,6 +30,7 @@ Model = (function () {
 
 
 
+  // COVERED!
   function ModelConfigurator(cls) {
     cls._rawAttributes = [];
 
@@ -161,12 +162,14 @@ Model = (function () {
 
   function Class(configuration) {
 
-    var DataFunctionPrototype = {},
-      i, attrData,
+    var i,
+      DataFunctionPrototype = {},
+      attrData,
       configurator;
 
     function Class() {
 
+      // COVERED!
       if (this.constructor != Class) {
         throw new ModelError('C001',
           "Instances should be created with keyword `new`!");
@@ -180,18 +183,22 @@ Model = (function () {
         dataEmpty = true,
         dataFn;
 
+      // COVERED!
       instance._data = {};
       instance._errors = {};
       instance._callbacks = {};
       instance._changes = {};
 
       // Pretend that instance is not validated, so that it could be.
+      // COVERED!
       instance._changesAfterValidation = true;
 
+      // COVERED!
       if (arguments.length == 0) {
         data = {};
       }
 
+      // COVERED!
       else if (arguments.length == 1) {
         if (typeof(arguments[0]) == 'boolean') {
           persistanceFlag = arguments[0];
@@ -208,6 +215,7 @@ Model = (function () {
         }
       }
 
+      // COVERED!
       else if (arguments.length == 2) {
         if (typeof(arguments[0]) == 'boolean' &&
               $.isPlainObject(arguments[1])) {
@@ -221,13 +229,14 @@ Model = (function () {
         }
       }
 
+      // COVERED!
       else {
         throw new ModelError('C004',
           "A Model Class constructor should be provided no more "+
           "than 2 arguments!");
       }
 
-
+      // COVERED!
       for (attrName in data) {
         if (cls.attributeNames.indexOf(attrName) >= 0) {
           instance._data[attrName] = data[attrName];
@@ -238,10 +247,12 @@ Model = (function () {
       // Instance tends to be persisted on initialization!
       instance._persisted = 1;
 
+      // COVERED! [general failures when idAttr is not defined]
       if (persistanceFlag === undefined) {
         if (cls.idAttr && !data[cls.idAttr]) instance._persisted = 0;
       }
 
+      // COVERED! [general failures when idAttr is defined]
       else if (persistanceFlag) {
         if (cls.idAttr) {
           if (!data[cls.idAttr]) {
@@ -252,10 +263,12 @@ Model = (function () {
         }
       }
 
+      // COVERED!
       else {
         instance._persisted = 0;
       }
 
+      // COVERED! [general failures when idAttr is not defined]
       if (instance._persisted > 0 && dataEmpty) {
         throw new ModelError('C006',
           "instance cannot be persisted on initialization if it has no data!");
@@ -269,18 +282,23 @@ Model = (function () {
         return $.extend({}, instance._data);
       }
 
+      // COVERED!
       dataFn.prototype = dataFn.__proto__ = DataFunctionPrototype;
 
+      // COVERED!
       instance._trigger('initialize');
     }
 
     configurator = new ModelConfigurator(Class);
     configuration.call(configurator, configurator);
 
+    // COVERED!
     attrData = ModelConfigurator.processRawAttributes(Class._rawAttributes);
 
+    // COVERED!
     delete Class._rawAttributes;
 
+    // COVERED!
     Class.idAttr = attrData.idAttr;
     Class.requiredAttributes = attrData.requiredAttributes;
     Class.attributeNames = attrData.attributeNames;

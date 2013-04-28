@@ -1,71 +1,98 @@
-module("InstancePrototype.isPersisted & InstancePrototype.persist()", {
+module("InstancePrototype", {
   teardown:function () {
     Model._classes = {};
   }
 });
 
-test("when idAttr is set",
+test("consistency",
+function () {
+  ok( InstancePrototype.__lookupGetter__('isPersisted') );
+  ok( $.isFunction(InstancePrototype._persist) );
+  ok( InstancePrototype.__lookupGetter__('data') );
+  ok( InstancePrototype.__lookupSetter__('data') );
+  ok( InstancePrototype.__lookupGetter__('isNew') );
+  ok( InstancePrototype.__lookupGetter__('hasChanged') );
+  ok( InstancePrototype.__lookupGetter__('_hasChangedAfterValidation') );
+  ok( InstancePrototype.__lookupGetter__('errors') );
+  ok( InstancePrototype.__lookupGetter__('isValid') );
+  ok( $.isFunction(InstancePrototype.get) );
+  ok( $.isFunction(InstancePrototype.set) );
+  ok( $.isFunction(InstancePrototype._get) );
+  ok( $.isFunction(InstancePrototype._set) );
+  ok( $.isFunction(InstancePrototype.bind) );
+  ok( $.isFunction(InstancePrototype._trigger) );
+});
+
+test("isPersisted — idAttr is set on Class",
 function () {
   var note, Note = new Model('Note', function () {
     this.attr('id!', 'number');
     this.attr('title', 'string');
   });
 
-  ok( Note.prototype.__lookupGetter__('isPersisted'), 'isPersisted getter exists on Class');
+  note = new Note;                           ok( !note.isPersisted );
+  note = new Note({});                       ok( !note.isPersisted );
+  note = new Note({ id: 1212 });             ok(  note.isPersisted );
+  note = new Note({ title: "Some" });        ok( !note.isPersisted );
+  note = new Note(false);                    ok( !note.isPersisted );
+  note = new Note(false, {});                ok( !note.isPersisted );
+  note = new Note(false, { id: 1212 });      ok( !note.isPersisted );
+  note = new Note(false, { title: "Some" }); ok( !note.isPersisted );
+  note = new Note(true, { id: 1212 });       ok(  note.isPersisted );
+});
+
+test("isPersisted — no idAttr on Class",
+function () {
+  var note, Note = new Model('Note', function () {
+    this.attr('slug', 'string');
+    this.attr('title', 'string');
+  });
+
+  note = new Note({ title: "Some" });        ok(  note.isPersisted );
+  note = new Note(false);                    ok( !note.isPersisted );
+  note = new Note(false, {});                ok( !note.isPersisted );
+  note = new Note(false, { title: "Some" }); ok( !note.isPersisted );
+  note = new Note(true, { title: "Some" });  ok(  note.isPersisted );
 
 
-  note = new Note;
+  // After being changed.
+
+  note = new Note({ slug: "abc", title: "ABC" });
+  ok( note.isPersisted );
+  note.data.title = "Other";
   ok( !note.isPersisted );
-
-  note = new Note({});
-  ok( !note.isPersisted );
-
-  note = new Note({ id: 1212 });
+  note.data.title = "ABC";
   ok( note.isPersisted );
 
-  note = new Note({ title: "Some" });
+  note = new Note(false, { slug: "abc", title: "ABC" });
+  ok( !note.isPersisted );
+  note.data.title = "Other";
+  ok( !note.isPersisted );
+  note.data.title = "ABC";
   ok( !note.isPersisted );
 
-
-  note = new Note(false);
-  ok( !note.isPersisted );
-
-  note = new Note(false, {});
-  ok( !note.isPersisted );
-
-  // NOTE This instance is considered new, as if it should be created with a known id.
-  note = new Note(false, { id: 1212 });
-  ok( !note.isPersisted );
-
-  note = new Note(false, { title: "Some" });
-  ok( !note.isPersisted );
-
-
-  throws(function () {
-    note = new Note(true);
-    note.isPersisted;
-  }, /C005/);
-
-  throws(function () {
-    note = new Note(true, {});
-    note.isPersisted;
-  }, /C005/);
-
-  throws(function () {
-    note = new Note(true, { title: "Some" });
-    note.isPersisted;
-  }, /C005/);
-
-  note = new Note(true, { id: 1212 });
+  note = new Note(true, { slug: "abc", title: "ABC" });
   ok( note.isPersisted );
+  note.data.title = "Other";
+  ok( !note.isPersisted );
+  note.data.title = "ABC";
+  ok( note.isPersisted );
+});
 
 
+test("_persist() — idAttr is set on Class",
+function () {
+  var note, Note = new Model('Note', function () {
+    this.attr('id!', 'number');
+    this.attr('title', 'string');
+  });
+
+  note = new Note(true, { id: 1212 }); ok(  note.isPersisted );
 
   var persisted = 0;
   note.bind('persist', function () {
     persisted += 1;
   });
-
   note.data.title = "New";
   ok( !note.isPersisted );
   note._persist();
@@ -77,50 +104,14 @@ function () {
   ok( note.isPersisted, "instance should stay persisted in that case too" );
 });
 
-test("when no idAttr is set",
+test("_persist() — no idAttr on Class",
 function () {
   var note, Note = new Model('Note', function () {
     this.attr('slug', 'string');
     this.attr('title', 'string');
   });
 
-
-  throws(function () {
-    note = new Note;
-    note.isPersisted;
-  }, /C006/);
-
-  throws(function () {
-    note = new Note({});
-    note.isPersisted;
-  }, /C006/);
-
-  note = new Note({ title: "Some" });
-  ok( note.isPersisted );
-
-
-  note = new Note(false);
-  ok( !note.isPersisted );
-
-  note = new Note(false, {});
-  ok( !note.isPersisted );
-
-  note = new Note(false, { title: "Some" });
-  ok( !note.isPersisted );
-
-  throws(function () {
-    note = new Note(true);
-    note.isPersisted;
-  }, /C006/);
-
-  throws(function () {
-    note = new Note(true, {});
-    note.isPersisted;
-  }, /C006/);
-
-  note = new Note(true, { title: "Some" });
-  ok( note.isPersisted );
-
+  note = new Note(true, { title: "Some" });  ok(  note.isPersisted );
 
   var persisted = 0;
   note.bind('persist', function () { persisted += 1; });
@@ -136,149 +127,39 @@ function () {
   ok( note.isPersisted, "instance should stay persisted in that case too" );
 });
 
-test("after being changed",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('slug', 'string');
-    this.attr('title', 'string');
-  });
-
-  note = new Note({ slug: "abc", title: "ABC" });
-  ok( note.isPersisted );
-  note.data.title = "Other";
-  ok( !note.isPersisted );
-  note.data.title = "ABC";
-  ok( note.isPersisted );
-
-  note = new Note(false, { slug: "abc", title: "ABC" });
-  ok( !note.isPersisted );
-  note.data.title = "Other";
-  ok( !note.isPersisted );
-  note.data.title = "ABC";
-  ok( !note.isPersisted );
-
-  note = new Note(true, { slug: "abc", title: "ABC" });
-  ok( note.isPersisted );
-  note.data.title = "Other";
-  ok( !note.isPersisted );
-  note.data.title = "ABC";
-  ok( note.isPersisted );
-});
-
-
-module("InstancePrototype", {
-  teardown:function () {
-    Model._classes = {};
-  }
-});
-
-test("isNew (when idAttr is set)",
+test("isNew — idAttr is set on Class",
 function () {
   var note, Note = new Model('Note', function () {
     this.attr('id!', 'number');
     this.attr('title', 'string');
   });
 
-  ok( Note.prototype.__lookupGetter__('isNew'), 'isNew getter exists on Class');
-
-
-  note = new Note;
-  ok( note.isNew );
-
-  note = new Note({});
-  ok( note.isNew );
-
-  note = new Note({ id: 1212 });
-  ok( !note.isNew );
-
-  note = new Note({ title: "Some" });
-  ok( note.isNew );
-
-
-  note = new Note(false);
-  ok( note.isNew );
-
-  note = new Note(false, {});
-  ok( note.isNew );
-
-  // NOTE This instance is considered new, as if it should be created with a known id.
-  note = new Note(false, { id: 1212 });
-  ok( note.isNew );
-
-  note = new Note(false, { title: "Some" });
-  ok( note.isNew );
-
-
-  throws(function () {
-    note = new Note(true);
-    note.isNew;
-  }, /C005/);
-
-  throws(function () {
-    note = new Note(true, {});
-    note.isNew;
-  }, /C005/);
-
-  throws(function () {
-    note = new Note(true, { title: "Some" });
-    note.isNew;
-  }, /C005/);
-
-  note = new Note(true, { id: 1212 });
-  ok( !note.isNew );
+  note = new Note;                           ok(  note.isNew );
+  note = new Note({});                       ok(  note.isNew );
+  note = new Note({ id: 1212 });             ok( !note.isNew );
+  note = new Note({ title: "Some" });        ok(  note.isNew );
+  note = new Note(false);                    ok(  note.isNew );
+  note = new Note(false, {});                ok(  note.isNew );
+  note = new Note(false, { id: 1212 });      ok(  note.isNew );
+  note = new Note(false, { title: "Some" }); ok(  note.isNew );
+  note = new Note(true, { id: 1212 });       ok( !note.isNew );
 });
 
-test("isNew (when no idAttr is set)",
+test("isNew — no idAttr on Class",
 function () {
   var note, Note = new Model('Note', function () {
     this.attr('slug', 'string');
     this.attr('title', 'string');
   });
 
-
-  throws(function () {
-    note = new Note;
-    note.isNew;
-  }, /C006/);
-
-  throws(function () {
-    note = new Note({});
-    note.isNew;
-  }, /C006/);
-
-  note = new Note({ title: "Some" });
-  ok( !note.isNew );
+  note = new Note({ title: "Some" });        ok( !note.isNew );
+  note = new Note(false);                    ok(  note.isNew );
+  note = new Note(false, {});                ok(  note.isNew );
+  note = new Note(false, { title: "Some" }); ok(  note.isNew );
+  note = new Note(true, { title: "Some" });  ok( !note.isNew );
 
 
-  note = new Note(false);
-  ok( note.isNew );
-
-  note = new Note(false, {});
-  ok( note.isNew );
-
-  note = new Note(false, { title: "Some" });
-  ok( note.isNew );
-
-  throws(function () {
-    note = new Note(true);
-    note.isNew;
-  }, /C006/);
-
-  throws(function () {
-    note = new Note(true, {});
-    note.isNew;
-  }, /C006/);
-
-  note = new Note(true, { title: "Some" });
-  ok( !note.isNew );
-});
-
-test("isNew (after being changed)",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('slug', 'string');
-    this.attr('title', 'string');
-  });
+  // After being changed.
 
   note = new Note({ slug: "abc", title: "ABC" });
   ok( !note.isNew );
@@ -301,7 +182,6 @@ function () {
   note.data.title = "ABC";
   ok( !note.isNew );
 });
-
 
 
 

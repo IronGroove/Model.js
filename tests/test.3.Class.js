@@ -1,77 +1,165 @@
+module("Class");
+
+test("consistency",
+function () {
+  ok( $.isFunction(Class.prototype.validate) );
+  ok( $.isFunction(Class.prototype.bind) );
+});
+
+
+module("Class creation", {
+  teardown: function () {
+    Model._classes = {};
+  }
+});
+
+test("consistency",
+function () {
+  var Note = new Model('Note', function () {
+    this.attr('id!', 'number');
+    this.attr('title', 'string');
+  });
+  var Post = new Model('Post', function () {
+    this.attr('slug', 'string');
+    this.attr('title', 'string');
+  });
+  ok( typeof Note.idAttr == 'string' );
+  ok( Post.idAttr == undefined );
+  ok( $.isArray(Note.requiredAttributes) && $.isArray(Post.requiredAttributes) );
+  ok( $.isArray(Note.attributeNames) && $.isArray(Post.attributeNames) );
+  ok( $.isPlainObject(Note.attributeValidators) && $.isPlainObject(Post.attributeValidators) );
+});
+
+test("should call ModelConfigurator.processRawAttributes",
+function () {
+  var realMethod = ModelConfigurator.processRawAttributes,
+    called = false;
+  ModelConfigurator.processRawAttributes = function () { called = true; return {}; };
+  try {
+    var Note = new Model('Note', function () {
+      this.attr('id!', 'number');
+      this.attr('title', 'string');
+    });
+  } catch (e) {}
+  ok( called );
+  ModelConfigurator.processRawAttributes = realMethod;
+});
+
+test("should create new ModelConfigurator instance and call Class configuration passed with it in context",
+function () {
+});
+
+
+
 module("Class instance creation", {
-  setup:function () {
+  setup: function () {
     Note = new Model('Note', function () {
       this.attr('id!', 'number');
       this.attr('title', 'string');
     });
   },
-  teardown:function () {
+  teardown: function () {
     delete Note;
-    delete Model._classes.Note;
+    Model._classes = {};
   }
 });
 
-test("should be created with `new` keyword",
+test("should work with `new` keyword only",
 function () {
-  throws(function () { var note = Note(); }, /C001/, 'throws exception without `new`' );
-
-  var note;
-
-  note = new Note();
-  ok( true, 'passes with `new`');
-
-  note = new Note;
-  ok( true, 'passes when provided nothing');
-
-  deepEqual( note._callbacks, {}, "has _callbacks object upon creation");
+  throws( function () { var note = Note(); }, /C001/, 'throws exception without `new`' );
+  var note = new Note({ id: 123 }); ok( true, 'passes with `new`');
 });
 
-test("should fail if Class constructor is passed 1 argument and it is neither a boolean, nor a data object",
+test("should not fail when provided nothing",
 function () {
-  throws(function () { var note = new Note('abc'); },     /C002/, 'string' );
-  throws(function () { var note = new Note(12345); },     /C002/, 'number' );
-  throws(function () { var note = new Note([]); },        /C002/, 'array' );
-  throws(function () { var note = new Note(null);  },     /C002/, 'null' );
-  throws(function () { var note = new Note(undefined); }, /C002/, 'explicit undefined' );
-  throws(function () { var note = new Note(/re/);  },     /C002/, 'regexp' );
+  var note = new Note(); ok( true, 'passes when provided empty data object');
+  var note = new Note;   ok( true, 'passes when provided nothing');
+});
 
-  var note = new Note(false);
-  ok( true, 'passes when receives false');
-
-  var note = new Note({});
-  ok( true, 'passes when receives a plain object');
+test("should fail when constructor is passed 1 argument and it is neither a boolean, nor a data object",
+function () {
+  throws( function () { var note = new Note('abc'); },     /C002/, 'string' );
+  throws( function () { var note = new Note(12345); },     /C002/, 'number' );
+  throws( function () { var note = new Note([]); },        /C002/, 'array' );
+  throws( function () { var note = new Note(null);  },     /C002/, 'null' );
+  throws( function () { var note = new Note(undefined); }, /C002/, 'explicit undefined' );
+  throws( function () { var note = new Note(/re/);  },     /C002/, 'regexp' );
+  var note = new Note(false); ok( true, 'passes when receives false');
+  var note = new Note({});    ok( true, 'passes when receives a plain object');
 });
 
 test("should fail if receives 2 arguments and they are not a boolean with a plain object data",
 function () {
-  throws(function () { var note = new Note('abc', {}); },     /C003/, 'fails if first argument is not boolean' );
-  throws(function () { var note = new Note(true, 'abc'); },   /C003/, 'fails if second argument is not a plain object' );
-
-  var note = new Note(false, {});
-  ok( true, 'passes when 1st arg is boolean and second is plain object');
+  throws( function () { var note = new Note('abc', {}); },     /C003/, 'fails if first argument is not boolean' );
+  throws( function () { var note = new Note(true, 'abc'); },   /C003/, 'fails if second argument is not a plain object' );
+  var note = new Note(false, { id: 123 }); ok( true, 'passes when 1st arg is boolean and second is plain object');
 });
 
-test("should fail if given more than 2 arguments",
+test("should fail when provided more than 2 arguments",
 function () {
   throws(function () { var note = new Note(true, { title: "String" }, 1); }, /C004/, 'fails when 2 first arguments are correct and provided any 3rd argument' );
 });
 
-test("should fail if explicit persistance flag is true and no idAttr value is provided in data obj",
+test("general failures when idAttr is defined",
 function () {
-  throws(function () { var note = new Note(true, { title: 'abc'}); }, /C005/);
-  throws(function () { var note = new Note(true); },                  /C005/);
-  throws(function () { var note = new Note(true, {}); },              /C005/);
+  throws(function () { var note = new Note(true); },                    /C005/, 'cannot persist on creation without data (nothing passed)');
+  throws(function () { var note = new Note(true, {}); },                /C005/, 'cannot persist on creation without data (empty data passed)');
+  throws(function () { var note = new Note(true, { title: "Some" }); }, /C005/, 'cannot persist on creation without idAttr value present');
+  var note = new Note(true, { id: 123 });
+  ok( true, 'can persist if idAttr value is present');
+});
 
-  var note = new Note(true, { id: 1212 });
-  ok( true );
+test("general failures when idAttr is not defined",
+function () {
+  var Note = new Model('Note2', function () {
+    this.attr('slug', 'string');
+    this.attr('title', 'string');
+  });
+
+  throws(function () { var note = new Note; },           /C006/, 'cannot persist on creation without data (nothing passed and no persistanceFlag)');
+  throws(function () { var note = new Note({}); },       /C006/, 'cannot persist on creation without data (empty data passed and no persistanceFlag)');
+  throws(function () { var note = new Note(true); },     /C006/, 'cannot persist on creation without data (nothing passed and persistanceFlag is true)');
+  throws(function () { var note = new Note(true, {}); }, /C006/, 'cannot persist on creation without data (empty data passed and persistanceFlag is true)');
+  var note = new Note(true, { slug: '123' });
+  ok( true, 'can persist if at least some data is present');
+});
+
+test("consistancy of new instances",
+function () {
+  var note = new Note;
+
+  ok( note.hasOwnProperty('_callbacks'), 'instance gets own property _callbacks upon creation');
+  deepEqual( note._callbacks, {}, "has empty _callbacks object upon creation");
+
+  ok( note.hasOwnProperty('_errors'), 'instance gets own property _errors upon creation');
+  deepEqual( note._errors, {}, "has empty _errors object upon creation");
+
+  ok( note.hasOwnProperty('_changes'), 'instance gets own property _changes upon creation');
+  deepEqual( note._changes, {}, "has empty _changes object upon creation");
+
+  ok( note.hasOwnProperty('_changesAfterValidation'), 'instance gets own property _changesAfterValidation upon creation');
+  ok( note._changesAfterValidation == true, "has _changesAfterValidation property set to true upon creation");
+
+  ok( note.hasOwnProperty('_persisted'), 'instance gets own property _persisted upon creation');
+  ok( note._persisted == 1 || note._persisted == 0, "has _persisted property is set to either 1 or 0 upon creation");
+
+  ok( note.hasOwnProperty('_data'), 'instance gets own property _data upon creation');
+  ok( $.isPlainObject(note._data), "has _data object upon creation");
+
+  ok( note.hasOwnProperty('_data2'), 'instance gets own property _data2 upon creation');
+  ok( $.isFunction(note._data2), "has _data2 function upon creation");
+
+  for (var i = 0; i < Note.attributeNames.length; i++) {
+    var attrName = Note.attributeNames[i];
+    ok( note._data2.__lookupGetter__(attrName) );
+    ok( note._data2.__lookupSetter__(attrName) );
+  }
+
+  ok( !note.hasOwnProperty('_rawAttributes'), 'instance should not have own property _rawAttributes upon creation');
 });
 
 test("instance._data should become populated with data provided on creation",
 function () {
-  var note = new Note;
-  ok( note.hasOwnProperty('_data'), 'instance gets own property _data created along with instance');
-  ok( $.isPlainObject(note._data), 'instance._data is plain object');
-
   var note = new Note;
   deepEqual( note._data, {}, 'empty data results in empty copy');
 
@@ -90,7 +178,18 @@ function () {
   deepEqual( note._data, { title: "abc" }, 'values for existing attributes get coppied #3: one attr missing, one unexisting provided');
 });
 
-// TODO ADD OTHER TESTS CKECKING INSTANCE.ISPERSISTED AFTER NOTE.PERSIST() AND NOTE.REVERT() METHOD CALLS.
+test("should trigger initialize event via instance._trigger",
+function () {
+  var triggered = null;
+  Note.prototype._trigger = function (eventName) { triggered = eventName; }
+  var note = new Note;
+  ok ( triggered == 'initialize' );
+});
+
+
+
+
+
 
 module("Class.bind", {
   setup: function () {
@@ -104,32 +203,32 @@ module("Class.bind", {
 
 test("should accept 2 arguments: a valid string eventName and a function eventHandler",
 function () {
-  throws(function(){ Cls.bind(); },                    /C101/, "should fail if no arguments specified!");
-  throws(function(){ Cls.bind(true); },                /C101/, "should fail if first argument is boolean true!");
-  throws(function(){ Cls.bind(false); },               /C101/, "should fail if first argument is boolean false!");
-  throws(function(){ Cls.bind(undefined); },           /C101/, "should fail if first argument is undefined!");
-  throws(function(){ Cls.bind(1234); },                /C101/, "should fail if first argument is an number!");
-  throws(function(){ Cls.bind(null); },                /C101/, "should fail if first argument is null!");
-  throws(function(){ Cls.bind([]); },                  /C101/, "should fail if first argument is an array!");
-  throws(function(){ Cls.bind({}); },                  /C101/, "should fail if first argument is an object!");
-  throws(function(){ Cls.bind(/re/); },                /C101/, "should fail if first argument is a regexp!");
-  throws(function(){ Cls.bind($.noop); },              /C101/, "should fail if first argument is a function!");
-  throws(function(){ Cls.bind('string'); },            /C101/, "should fail if first argument is an unknown name!");
-  throws(function(){ Cls.bind('str', $.noop); },       /C101/, "should fail if first argument is an unknown name though 2nd is a function!");
+  throws( function(){ Cls.bind(); },                    /C101/, "should fail if no arguments specified!");
+  throws( function(){ Cls.bind(true); },                /C101/, "should fail if first argument is boolean true!");
+  throws( function(){ Cls.bind(false); },               /C101/, "should fail if first argument is boolean false!");
+  throws( function(){ Cls.bind(undefined); },           /C101/, "should fail if first argument is undefined!");
+  throws( function(){ Cls.bind(1234); },                /C101/, "should fail if first argument is an number!");
+  throws( function(){ Cls.bind(null); },                /C101/, "should fail if first argument is null!");
+  throws( function(){ Cls.bind([]); },                  /C101/, "should fail if first argument is an array!");
+  throws( function(){ Cls.bind({}); },                  /C101/, "should fail if first argument is an object!");
+  throws( function(){ Cls.bind(/re/); },                /C101/, "should fail if first argument is a regexp!");
+  throws( function(){ Cls.bind($.noop); },              /C101/, "should fail if first argument is a function!");
+  throws( function(){ Cls.bind('string'); },            /C101/, "should fail if first argument is an unknown name!");
+  throws( function(){ Cls.bind('str', $.noop); },       /C101/, "should fail if first argument is an unknown name though 2nd is a function!");
 
-  throws(function(){ Cls.bind('change'); },            /C101/, "should fail if second argument is omitted");
-  throws(function(){ Cls.bind('change', true); },      /C101/, "should fail if second argument is not a function (true boolean supplied)");
-  throws(function(){ Cls.bind('change', false); },     /C101/, "should fail if second argument is not a function (false boolean supplied)");
-  throws(function(){ Cls.bind('change', undefined); }, /C101/, "should fail if second argument is not a function (undefined supplied)");
-  throws(function(){ Cls.bind('change', 1234); },      /C101/, "should fail if second argument is not a function (number supplied)");
-  throws(function(){ Cls.bind('change', null); },      /C101/, "should fail if second argument is not a function (null supplied)");
-  throws(function(){ Cls.bind('change', []); },        /C101/, "should fail if second argument is not a function (array supplied)");
-  throws(function(){ Cls.bind('change', {}); },        /C101/, "should fail if second argument is not a function (object supplied)");
-  throws(function(){ Cls.bind('change', 'str'); },     /C101/, "should fail if second argument is not a function (string supplied)");
-  throws(function(){ Cls.bind('change', /re/); },      /C101/, "should fail if second argument is not a function (regexp supplied)");
+  throws( function(){ Cls.bind('change'); },            /C101/, "should fail if second argument is omitted");
+  throws( function(){ Cls.bind('change', true); },      /C101/, "should fail if second argument is not a function (true boolean supplied)");
+  throws( function(){ Cls.bind('change', false); },     /C101/, "should fail if second argument is not a function (false boolean supplied)");
+  throws( function(){ Cls.bind('change', undefined); }, /C101/, "should fail if second argument is not a function (undefined supplied)");
+  throws( function(){ Cls.bind('change', 1234); },      /C101/, "should fail if second argument is not a function (number supplied)");
+  throws( function(){ Cls.bind('change', null); },      /C101/, "should fail if second argument is not a function (null supplied)");
+  throws( function(){ Cls.bind('change', []); },        /C101/, "should fail if second argument is not a function (array supplied)");
+  throws( function(){ Cls.bind('change', {}); },        /C101/, "should fail if second argument is not a function (object supplied)");
+  throws( function(){ Cls.bind('change', 'str'); },     /C101/, "should fail if second argument is not a function (string supplied)");
+  throws( function(){ Cls.bind('change', /re/); },      /C101/, "should fail if second argument is not a function (regexp supplied)");
 
-  throws(function(){ Cls.bind('change', $.noop, 0); }, /C101/, "should fail when there are more than 2 arguments supplied");
-  throws(function(){ Cls.bind('cry', $.noop); },       /C101/, "should fail when an unknown event is being bound");
+  throws( function(){ Cls.bind('change', $.noop, 0); }, /C101/, "should fail when there are more than 2 arguments supplied");
+  throws( function(){ Cls.bind('cry', $.noop); },       /C101/, "should fail when an unknown event is being bound");
 });
 
 test("should act correctly",
