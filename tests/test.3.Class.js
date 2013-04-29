@@ -2,8 +2,8 @@ module("Class");
 
 test("consistency",
 function () {
-  ok( $.isFunction(Class.prototype.validate) );
-  ok( $.isFunction(Class.prototype.bind) );
+  ok( $.isFunction(Model.private.Class.prototype.validate) );
+  ok( $.isFunction(Model.private.Class.prototype.bind) );
 });
 
 
@@ -30,23 +30,37 @@ function () {
   ok( $.isPlainObject(Note.attributeValidators) && $.isPlainObject(Post.attributeValidators) );
 });
 
-test("should call ModelConfigurator.processRawAttributes",
-function () {
-  var realMethod = ModelConfigurator.processRawAttributes,
-    called = false;
-  ModelConfigurator.processRawAttributes = function () { called = true; return {}; };
-  try {
-    var Note = new Model('Note', function () {
-      this.attr('id!', 'number');
-      this.attr('title', 'string');
-    });
-  } catch (e) {}
-  ok( called );
-  ModelConfigurator.processRawAttributes = realMethod;
-});
-
 test("should create new ModelConfigurator instance and call Class configuration passed with it in context",
 function () {
+  var realMethod = Model.private.ModelConfigurator,
+    called = false;
+  Model.private.ModelConfigurator = function MC(cls) {
+    if (this.constructor.name == 'MC') called = true;
+    return new realMethod(cls);
+  }
+  $.extend(Model.private.ModelConfigurator, realMethod);
+  var Note = new Model('Note', function () {
+    this.attr('id!', 'number');
+    this.attr('title', 'string');
+  });
+  ok( called );
+  Model.private.ModelConfigurator = realMethod;
+});
+
+test("should call ModelConfigurator.processRawAttributes",
+function () {
+  var realMethod = Model.private.ModelConfigurator.processRawAttributes,
+    called = false;
+  Model.private.ModelConfigurator.processRawAttributes = function () {
+    called = true;
+    return realMethod.apply(null, arguments);
+  };
+  var Note = new Model('Note', function () {
+    this.attr('id!', 'number');
+    this.attr('title', 'string');
+  });
+  ok( called );
+  Model.private.ModelConfigurator.processRawAttributes = realMethod;
 });
 
 
@@ -193,7 +207,7 @@ function () {
 
 module("Class.bind", {
   setup: function () {
-    Cls = new Class($.noop);
+    Cls = new Model.private.Class($.noop);
   },
   teardown: function () {
     delete Cls;
@@ -268,7 +282,7 @@ function () {
 
 module("Class.validate", {
   setup: function () {
-    Cls = new Class(function () {
+    Cls = new Model.private.Class(function () {
       this.attr('id!', 'number');
       this.attr('title+', 'string');
       this.attr('text', 'string');
@@ -330,7 +344,7 @@ function () {
 
 test("attribute (array [string validator name, options)",
 function () {
-  var Cls = new Class(function () {
+  var Cls = new Model.private.Class(function () {
     this.attr('id!', 'number');
     this.attr('title+', 'string');
     this.attr('body', 'string');
@@ -344,7 +358,7 @@ function () {
 
 test("attribute (function)",
 function () {
-  var Cls = new Class(function () {
+  var Cls = new Model.private.Class(function () {
     this.attr('id!', 'number');
     this.attr('title+', 'string', function (value) {
       if (!value.match(/^[0-9A-Z\ ]+$/g)) return 'lowercase';

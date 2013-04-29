@@ -6,6 +6,7 @@ module("InstancePrototype", {
 
 test("consistency",
 function () {
+  var InstancePrototype = Model.private.InstancePrototype;
   ok( InstancePrototype.__lookupGetter__('isPersisted') );
   ok( $.isFunction(InstancePrototype._persist) );
   ok( InstancePrototype.__lookupGetter__('data') );

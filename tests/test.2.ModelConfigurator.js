@@ -1,7 +1,7 @@
 module("ModelConfigurator", {
   setup: function () {
     cls = {};
-    conf = new ModelConfigurator(cls);
+    conf = new Model.private.ModelConfigurator(cls);
   },
   teardown: function () {
     delete cls;
@@ -125,18 +125,18 @@ function () {
 test('processRawAttributes',
 function () {
   throws(function () {
-    var attrData = ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'nonempty'] },
+    var attrData = Model.private.ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'nonempty'] },
                                                             { name: 'slug',  required: false, idAttr: true, validators: ['string'] } ]);
   }, /MC101/, "should fail when multiple attributes are flagged as id attribute");
 
   throws(function () {
-      var attrData = ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'empty'] } ]);
+      var attrData = Model.private.ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'empty'] } ]);
   }, /MC102/, "should fail when attributes described with unknown validators");
 });
 
 test("processRawAttributes — should remove duplicates in favour of the most recent declaration",
 function () {
-  var attrData = ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'nonempty'] },
+  var attrData = Model.private.ModelConfigurator.processRawAttributes([ { name: 'title', required: false, idAttr: true, validators: ['string', 'nonempty'] },
                                                           { name: 'slug',  required: true,  idAttr: false, validators: ['number'] },
                                                           { name: 'slug',  required: false, idAttr: false, validators: ['string'] },
                                                           { name: 'title', required: true, idAttr: false, validators: ['number'] } ]);

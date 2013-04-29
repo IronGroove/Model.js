@@ -4,7 +4,8 @@
 
 Model = (function () {
 
-  var MC;
+  var MC,
+    private = {};
 
 
   function ModelError(code, message) {
@@ -44,7 +45,7 @@ Model = (function () {
 
     cls._callbacks = {};
 
-    cls.prototype = cls.__proto__ = Class.prototype;
+    cls.prototype = cls.__proto__ = private.Class.prototype;
 
     this.errCodes = cls.errCodes;
 
@@ -289,11 +290,12 @@ Model = (function () {
       instance._trigger('initialize');
     }
 
-    configurator = new ModelConfigurator(Class);
+    // COVERED!
+    configurator = new private.ModelConfigurator(Class);
     configuration.call(configurator, configurator);
 
     // COVERED!
-    attrData = ModelConfigurator.processRawAttributes(Class._rawAttributes);
+    attrData = private.ModelConfigurator.processRawAttributes(Class._rawAttributes);
 
     // COVERED!
     delete Class._rawAttributes;
@@ -322,7 +324,7 @@ Model = (function () {
 
 
     var Mediator = new Function;
-    Mediator.prototype = InstancePrototype;
+    Mediator.prototype = private.InstancePrototype;
     Class.prototype = new Mediator;
     Class.prototype.constructor = Class;
 
@@ -641,7 +643,7 @@ Model = (function () {
         'A Model with that name already exists!');
     }
 
-    var cls = new Class(configuration);
+    var cls = new private.Class(configuration);
 
     // TODO Sanity checks.
 
@@ -713,13 +715,17 @@ Model = (function () {
   });
 
 
+
+  private.Class = Class;
+  private.ModelConfigurator = ModelConfigurator;
+  private.InstancePrototype = InstancePrototype;
+
+
+
   // Expose private functions for testing.
 
   if (window && window.MODEL_JS_TEST_MODE) {
-    window.ModelError = ModelError;
-    window.ModelConfigurator = ModelConfigurator;
-    window.Class = Class;
-    window.InstancePrototype = InstancePrototype;
+    Model.private = private;
   }
 
   return Model;
