@@ -64,7 +64,6 @@ function () {
 });
 
 
-
 module("Class instance creation", {
   setup: function () {
     Note = new Model('Note', function () {
@@ -112,30 +111,6 @@ function () {
 test("should fail when provided more than 2 arguments",
 function () {
   throws(function () { var note = new Note(true, { title: "String" }, 1); }, /C004/, 'fails when 2 first arguments are correct and provided any 3rd argument' );
-});
-
-test("general failures when idAttr is defined",
-function () {
-  throws(function () { var note = new Note(true); },                    /C005/, 'cannot persist on creation without data (nothing passed)');
-  throws(function () { var note = new Note(true, {}); },                /C005/, 'cannot persist on creation without data (empty data passed)');
-  throws(function () { var note = new Note(true, { title: "Some" }); }, /C005/, 'cannot persist on creation without idAttr value present');
-  var note = new Note(true, { id: 123 });
-  ok( true, 'can persist if idAttr value is present');
-});
-
-test("general failures when idAttr is not defined",
-function () {
-  var Note = new Model('Note2', function () {
-    this.attr('slug', 'string');
-    this.attr('title', 'string');
-  });
-
-  throws(function () { var note = new Note; },           /C006/, 'cannot persist on creation without data (nothing passed and no persistanceFlag)');
-  throws(function () { var note = new Note({}); },       /C006/, 'cannot persist on creation without data (empty data passed and no persistanceFlag)');
-  throws(function () { var note = new Note(true); },     /C006/, 'cannot persist on creation without data (nothing passed and persistanceFlag is true)');
-  throws(function () { var note = new Note(true, {}); }, /C006/, 'cannot persist on creation without data (empty data passed and persistanceFlag is true)');
-  var note = new Note(true, { slug: '123' });
-  ok( true, 'can persist if at least some data is present');
 });
 
 test("consistancy of new instances",
@@ -200,7 +175,107 @@ function () {
   ok ( triggered == 'initialize' );
 });
 
+test("instance._data2 — dataFunction",
+function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData);
 
+  ok( typeof(note._data2) == 'function', "_data2 should be a function");
+  ok( note._data2(undefined) == note, "data(undefined) should return the instance");
+
+  ok( note._data2() !== note._data, "returned object shouldn't be a reference to a private _data property");
+  ok( note._data2() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
+
+  deepEqual( objectKeys(note._data2), Note.attributeNames, "keys in returned object should be same as Class attributes");
+  deepEqual( note._data2(), { id: 123, title: 'abc' }, "_data2 should return a copy of actual data");
+  deepEqual( note._data2(123), note.get(123), "_data2([anything other than undefined]) should return a instance.get result for same args");
+
+  note.get = function () { return "YES!"; }
+  deepEqual( note._data2(), "YES!" , "_data2([anything other than undefined]) should return a instance.get result for same args");
+});
+
+test("instance._data2[attrName] — DataFunctionPrototype",
+function () {
+  var i,
+    noteData = { id: 123, title: 'abc', text: 'text' },
+    name,
+    getters = [],
+    note = new Note(noteData);
+
+  for (i = 0; i < Note.attributeNames.length; i++) {
+    name = Note.attributeNames[i];
+    if ( note._data2.__lookupGetter__(name) && note._data2[name] == noteData[name] ) {
+      getters.push(name);
+    }
+  }
+
+  deepEqual(getters, Note.attributeNames, 'all getters should exist and return correct expected values');
+});
+
+test("instance._data2[attrName]= — DataFunctionPrototype",
+function () {
+  var i,
+    noteData = { id: 123, title: 'abc', text: 'text' },
+    name,
+    setters = [],
+    setterOK,
+    rand,
+    note = new Note(noteData);
+
+  for (i = 0; i < Note.attributeNames.length; i++) {
+    name = Note.attributeNames[i];
+
+    setterOK = note._data2.__lookupSetter__( Note.attributeNames[i] );
+
+    rand = Math.random() * 99;
+    note._data2[name] = rand;
+
+    if ( setterOK && note._data[name] === rand) {
+      setters.push(name);
+    }
+  }
+
+  deepEqual(setters, Note.attributeNames, 'all setters should exist and set right values on correct attributes');
+});
+
+test("instance.isPersisted — when idAttr is set on Class",
+function () {
+  var note, Note = new Model('Note2', function () {
+    this.attr('id!', 'number');
+    this.attr('title', 'string');
+  });
+
+  note = new Note;                           ok( !note.isPersisted );
+  note = new Note({});                       ok( !note.isPersisted );
+  note = new Note({ id: 1212 });             ok(  note.isPersisted );
+  note = new Note({ title: "Some" });        ok( !note.isPersisted );
+  note = new Note(false);                    ok( !note.isPersisted );
+  note = new Note(false, {});                ok( !note.isPersisted );
+  note = new Note(false, { id: 1212 });      ok( !note.isPersisted );
+  note = new Note(false, { title: "Some" }); ok( !note.isPersisted );
+  note = new Note(true);                     ok( !note.isPersisted );
+  note = new Note(true, {});                 ok( !note.isPersisted );
+  note = new Note(true, { id: 1212 });       ok(  note.isPersisted );
+  note = new Note(true, { title: "Some" });  ok( !note.isPersisted );
+});
+
+test("instance.isPersisted — when no idAttr on Class",
+function () {
+  var note, Note = new Model('Note2', function () {
+    this.attr('slug', 'string');
+    this.attr('title', 'string');
+  });
+
+  note = new Note;                           ok( !note.isPersisted );
+  note = new Note({});                       ok( !note.isPersisted );
+  note = new Note({ title: "Some" });        ok(  note.isPersisted );
+  note = new Note(false);                    ok( !note.isPersisted );
+  note = new Note(false, {});                ok( !note.isPersisted );
+  note = new Note(false, { title: "Some" }); ok( !note.isPersisted );
+  note = new Note(true);                     ok( !note.isPersisted );
+  note = new Note(true, {});                 ok( !note.isPersisted );
+  note = new Note(true, { title: "Some" });  ok(  note.isPersisted );
+});
 
 
 
@@ -287,15 +362,24 @@ module("Class.validate", {
       this.attr('title+', 'string');
       this.attr('text', 'string');
     });
+    Cls2 = new Model.private.Class(function () {
+      this.attr('id!', 'number');
+      this.attr('title+', 'string');
+      this.attr('text', 'string');
+    });
   },
   teardown: function () {
     delete Cls;
+    delete Cls2;
   }
 });
 
 test("argument variants and failures", function () {
   throws(function(){ Cls.validate(); }, /C102/, "fails when no arguments provided");
   throws(function(){ Cls.validate(1,2,3); }, /C102/, "fails when provided more than 2 arguments");
+
+  var instance = new Cls2({ title: "ABC" });
+  throws(function(){ Cls.validate(instance); }, /C103/, "fails when provided instance is not of a target Model Class");
   throws(function(){ Cls.validate(1); }, /C103/, "fails when provided 1 arg and it's not the instance of same Class");
 
   var instance = new Cls({ title: "ABC" });
@@ -353,6 +437,7 @@ function () {
 
   ok( Cls.validate('lang', '12') === Model.errCodes.NOT_IN );
   ok( Cls.validate('lang', 'en') === undefined );
+  ok( Cls.validate('lang', 12) === Model.errCodes.WRONG_TYPE );
 });
 
 

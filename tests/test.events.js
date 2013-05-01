@@ -1,4 +1,4 @@
-module("Events", {
+module("Triggering events", {
   setup: function () {
     Note = new Model('Note', function () {
       this.attr('id!',   'string');
@@ -44,4 +44,20 @@ function () {
 
   note.data = { id: 1234, title: "New" };
   deepEqual( changes, [ 'title:Some', 'title:New', 'id:1234' ], "should not be triggered if data left unchanged");
+});
+
+test("persist",
+function () {
+  var persisted;
+
+  Note.bind('persist', function (change) {
+    persisted = true;
+  });
+
+  var note = new Note({ id: 123, title: "ABC" });
+  note.data.title = "Some";
+
+  note._persist();
+
+  ok( persisted );
 });

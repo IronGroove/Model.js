@@ -24,166 +24,6 @@ function () {
   ok( $.isFunction(InstancePrototype._trigger) );
 });
 
-test("isPersisted — idAttr is set on Class",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('id!', 'number');
-    this.attr('title', 'string');
-  });
-
-  note = new Note;                           ok( !note.isPersisted );
-  note = new Note({});                       ok( !note.isPersisted );
-  note = new Note({ id: 1212 });             ok(  note.isPersisted );
-  note = new Note({ title: "Some" });        ok( !note.isPersisted );
-  note = new Note(false);                    ok( !note.isPersisted );
-  note = new Note(false, {});                ok( !note.isPersisted );
-  note = new Note(false, { id: 1212 });      ok( !note.isPersisted );
-  note = new Note(false, { title: "Some" }); ok( !note.isPersisted );
-  note = new Note(true, { id: 1212 });       ok(  note.isPersisted );
-});
-
-test("isPersisted — no idAttr on Class",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('slug', 'string');
-    this.attr('title', 'string');
-  });
-
-  note = new Note({ title: "Some" });        ok(  note.isPersisted );
-  note = new Note(false);                    ok( !note.isPersisted );
-  note = new Note(false, {});                ok( !note.isPersisted );
-  note = new Note(false, { title: "Some" }); ok( !note.isPersisted );
-  note = new Note(true, { title: "Some" });  ok(  note.isPersisted );
-
-
-  // After being changed.
-
-  note = new Note({ slug: "abc", title: "ABC" });
-  ok( note.isPersisted );
-  note.data.title = "Other";
-  ok( !note.isPersisted );
-  note.data.title = "ABC";
-  ok( note.isPersisted );
-
-  note = new Note(false, { slug: "abc", title: "ABC" });
-  ok( !note.isPersisted );
-  note.data.title = "Other";
-  ok( !note.isPersisted );
-  note.data.title = "ABC";
-  ok( !note.isPersisted );
-
-  note = new Note(true, { slug: "abc", title: "ABC" });
-  ok( note.isPersisted );
-  note.data.title = "Other";
-  ok( !note.isPersisted );
-  note.data.title = "ABC";
-  ok( note.isPersisted );
-});
-
-
-test("_persist() — idAttr is set on Class",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('id!', 'number');
-    this.attr('title', 'string');
-  });
-
-  note = new Note(true, { id: 1212 }); ok(  note.isPersisted );
-
-  var persisted = 0;
-  note.bind('persist', function () {
-    persisted += 1;
-  });
-  note.data.title = "New";
-  ok( !note.isPersisted );
-  note._persist();
-  ok( persisted == 1, "persist event should be triggered" );
-  ok( note.isPersisted, "instance should become persisted after _perstst method call" );
-
-  note._persist();
-  ok( persisted == 1, "persist event should not be triggered if there were no changes" );
-  ok( note.isPersisted, "instance should stay persisted in that case too" );
-});
-
-test("_persist() — no idAttr on Class",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('slug', 'string');
-    this.attr('title', 'string');
-  });
-
-  note = new Note(true, { title: "Some" });  ok(  note.isPersisted );
-
-  var persisted = 0;
-  note.bind('persist', function () { persisted += 1; });
-
-  note.data.title = "New";
-  ok( !note.isPersisted );
-  note._persist();
-  ok( persisted == 1, "persist event should be triggered" );
-  ok( note.isPersisted, "instance should become persisted after _perstst method call" );
-
-  note._persist();
-  ok( persisted == 1, "persist event should not be triggered if there were no changes" );
-  ok( note.isPersisted, "instance should stay persisted in that case too" );
-});
-
-test("isNew — idAttr is set on Class",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('id!', 'number');
-    this.attr('title', 'string');
-  });
-
-  note = new Note;                           ok(  note.isNew );
-  note = new Note({});                       ok(  note.isNew );
-  note = new Note({ id: 1212 });             ok( !note.isNew );
-  note = new Note({ title: "Some" });        ok(  note.isNew );
-  note = new Note(false);                    ok(  note.isNew );
-  note = new Note(false, {});                ok(  note.isNew );
-  note = new Note(false, { id: 1212 });      ok(  note.isNew );
-  note = new Note(false, { title: "Some" }); ok(  note.isNew );
-  note = new Note(true, { id: 1212 });       ok( !note.isNew );
-});
-
-test("isNew — no idAttr on Class",
-function () {
-  var note, Note = new Model('Note', function () {
-    this.attr('slug', 'string');
-    this.attr('title', 'string');
-  });
-
-  note = new Note({ title: "Some" });        ok( !note.isNew );
-  note = new Note(false);                    ok(  note.isNew );
-  note = new Note(false, {});                ok(  note.isNew );
-  note = new Note(false, { title: "Some" }); ok(  note.isNew );
-  note = new Note(true, { title: "Some" });  ok( !note.isNew );
-
-
-  // After being changed.
-
-  note = new Note({ slug: "abc", title: "ABC" });
-  ok( !note.isNew );
-  note.data.title = "Other";
-  ok( !note.isNew );
-  note.data.title = "ABC";
-  ok( !note.isNew );
-
-  note = new Note(false, { slug: "abc", title: "ABC" });
-  ok( note.isNew );
-  note.data.title = "Other";
-  ok( note.isNew );
-  note.data.title = "ABC";
-  ok( note.isNew );
-
-  note = new Note(true, { slug: "abc", title: "ABC" });
-  ok( !note.isNew );
-  note.data.title = "Other";
-  ok( !note.isNew );
-  note.data.title = "ABC";
-  ok( !note.isNew );
-});
-
 
 
 module("InstancePrototype", {
@@ -197,6 +37,42 @@ module("InstancePrototype", {
     delete Note;
     Model._classes = {};
   }
+});
+
+
+//   C H A N G E S  ,  G E T T E R S   &   S E T T E R S
+//   ===================================================
+
+test("isNew",
+function () {
+  var note = new Note;
+
+  note._persisted = 0;
+  ok( note.isNew );
+
+  note._persisted = 1;
+  ok( !note.isNew );
+});
+
+test("isPersisted",
+function () {
+  var note = new Note;
+
+  note._persisted = false;
+  note.__defineGetter__('hasChanged', function () { return true; });
+  ok( !note.isPersisted );
+
+  note._persisted = false;
+  note.__defineGetter__('hasChanged', function () { return false; });
+  ok( !note.isPersisted );
+
+  note._persisted = true;
+  note.__defineGetter__('hasChanged', function () { return true; });
+  ok( !note.isPersisted );
+
+  note._persisted = true;
+  note.__defineGetter__('hasChanged', function () { return false; });
+  ok( note.isPersisted );
 });
 
 test("_get(attrName)",
@@ -213,21 +89,22 @@ function () {
 test("_set(attrName, value, triggerChange)",
 function () {
   var noteData = { id: 123, title: 'abc' },
-    note = new Note(noteData), change = 0;
+    note = new Note(noteData),
+    change = 0;
 
-  note.bind('change', function () { change += 1; });
+  note._trigger = function (eventName) { if (eventName == 'change') change += 1; };
 
   ok( note._set('title', 'new') === true, "_set should return true if new value is set");
   ok( note._data.title === 'new', "value should be changed" );
   ok( change == 1, "change event should be triggered if 3rd argument triggerChange is omitted")
   deepEqual( note._changes, { title: "abc" }, "_changes should be populated by original value for the changed attribute");
-  deepEqual( note._changesAfterValidation, { title: "new" }, "_changesAfterValidation should be populated by tha new value for the attribute");
+  deepEqual( note._changesAfterValidation, { title: "new" }, "_changesAfterValidation should be populated by the new value for the attribute");
 
   ok( note._set('title', 'new') === false, "_set should return false if new value is not set");
   ok( note._data.title === 'new', "value should not be changed in that case");
   deepEqual( note._changes, { title: "abc" }, "_changes should not have changed in thaat case");
   deepEqual( note._changesAfterValidation, { title: "new" }, "_changesAfterValidation should not have changed also");
-  ok( change == 1, "change event should note be triggered in that case")
+  ok( change == 1, "change event should not be triggered in that case")
 
   note._set('title', 'NEW');
   ok( note._data.title === 'NEW', "should work correctly after _set >> false");
@@ -246,22 +123,10 @@ function () {
   deepEqual( note._changes, { title: "abc" });
   deepEqual( note._changesAfterValidation, { title: "Boo" });
   ok( change == 3, "but change event should not be triggered in that case");
-});
 
-test("data()",
-function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  ok( note.data(undefined) == note, "data(undefined) should return the instance");
-
-  ok( typeof(note.data) == 'function', "returned should be a function");
-  ok( note.data() !== note._data, "returned object shouldn't be a reference to a private _data property");
-  ok( note.data() !== noteData, "returned object shouldn't be a reference to data provided to a constructor");
-
-  deepEqual( objectKeys(note.data()), Note.attributeNames, "keys in returned object should be same as Class attributes");
-  deepEqual( note.data(), { id: 123, title: 'abc' }, "data() should return a copy of actual data");
-  deepEqual( note.data(123), { id: 123, title: 'abc' }, "data([anything other than undefined]) should return a copy of actual data");
+  note._set('id', 1, false);
+  deepEqual( note._changes, { title: "abc", id: 123 });
+  deepEqual( note._changesAfterValidation, { title: "Boo", id: 1 });
 });
 
 test("data",
@@ -269,35 +134,13 @@ function () {
   var noteData = { id: 123, title: 'abc', text: 'text' },
     note = new Note(noteData);
 
-  var keys = []; for (var k in note.data) keys.push(k);
+  note._data2 = 123;
+  ok( note.data == 123, "should return _data2 whatever it is");
+
+  note = new Note(noteData);
+
+  var keys = objectKeys(note.data);
   deepEqual(keys, Note.attributeNames, "data is iterable and contains keys for all declared attributes");
-});
-
-test("data[attrName]",
-function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  var keys = []; for (var k in note.data) keys.push(k);
-  deepEqual(keys, Note.attributeNames, "data is iterable and contain keys for all declared attributes");
-
-  for (var i = 0; i < Note.attributeNames.length; i++) {
-    ok( note.data.__lookupGetter__( Note.attributeNames[i] ),  Note.attributeNames[i]+' getter exists' );
-    ok( note.data[ Note.attributeNames[i] ] == noteData[ Note.attributeNames[i] ],  Note.attributeNames[i]+' getter value OK' );
-  }
-});
-
-test("data[attrName]=",
-function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData);
-
-  for (var i = 0; i < Note.attributeNames.length; i++) {
-    ok( note.data.__lookupSetter__( Note.attributeNames[i] ),  Note.attributeNames[i]+'= setter exists' );
-    var rand = Math.random() * 99;
-    note.data[ Note.attributeNames[i] ] = rand;
-    ok( note._data[ Note.attributeNames[i] ] === rand,  Note.attributeNames[i]+'= setter works' );
-  }
 });
 
 test("data=",
@@ -320,36 +163,28 @@ function () {
   var data3 = { id: 567, title: 'Abc' };
   var data4 = { id: 567, title: 'abc', text: 'Text' };
 
-  note.bind('change', function (chngs) { changes = $.extend(changes, {}, chngs); });
+  note._trigger = function (eventName, chngs) { if (eventName == 'change') changes = $.extend(changes, {}, chngs); };
 
   note.data = data1;
-  deepEqual( note.data(), data1 );
-  ok( note.data() !== data1 );
+  deepEqual( note._data, data1 );
   ok( note._data !== data1 );
-  deepEqual( changes, { title: "ABC" }, "should trigger change event");
+  deepEqual( changes, { title: "ABC" }, "should trigger change event with changes object passed to it");
 
   note.data = data2;
-  deepEqual( note.data(), data2 );
-  ok( note.data() !== data2 );
+  deepEqual( note._data, data2 );
   ok( note._data !== data2 );
 
   note.data = data3;
-  deepEqual( note.data(), data3 );
-  ok( note.data() !== data3 );
+  deepEqual( note._data, data3 );
   ok( note._data !== data3 );
 
   note.data = data4;
-  deepEqual( note.data(), { id: 567, title: 'abc' });
-  ok( note._data !== data4 );
+  deepEqual( note._data, { id: 567, title: 'abc' });
 });
-
 
 test("hasChanged",
 function () {
-  ok( Note.prototype.__lookupGetter__('hasChanged'), 'hasChanged getter exists on Class');
-
   var note;
-
 
   // persistence
 
@@ -369,20 +204,26 @@ function () {
   ok( !note.hasChanged, "not persisting instance should not be changed right after initializing");
 
 
-  // data.[attrName]= setter
+  // data[attrName]= setter
 
   note = new Note({ id: 1212, title: "ABC" });
 
+  note.data.title = "ABC";
+  ok( !note.hasChanged, "instance should not be changed after resetting initial attribute value via data[attrName]=");
+
   note.data.title = "NEW";
-  ok( note.hasChanged, "instance should be changed after changing any attribute value via data.[attrName]=");
+  ok( note.hasChanged, "instance should be changed after changing any attribute value via data[attrName]=");
 
   note.data.title = "ABC";
-  ok( !note.hasChanged, "instance should not be changed when old value is explicitly changed to the initial one via data.[attrName]=");
+  ok( !note.hasChanged, "instance should not be changed when old value is explicitly changed to the initial one via data[attrName]=");
 
 
   // data= setter
 
   note = new Note({ id: 1212, title: "ABC" });
+
+  note.data = { id: 1212, title: "ABC"};
+  ok( !note.hasChanged, "instance should not be changed after reseting same initial data via data=");
 
   note.data = { id: 1313, title: "ABC"};
   ok( note.hasChanged, "instance should be changed after changing data via data=");
@@ -395,9 +236,101 @@ function () {
 
   note = new Note({ id: 1212, title: "ABC" });
 
+  note.set('title', "ABC");
+  ok( !note.hasChanged, "instance should not be changed after resetting initial values via set");
+
   note.set('title', "NEW");
   ok( note.hasChanged, "instance should be changed after changing data via set");
 
+
+  // general case
+  note = new Note;
+
+  note._changes.abc = 123;
+  ok( note.hasChanged, "instance should be changed if _changes object has any values in it" );
+
+  note._changes = {}
+  ok( !note.hasChanged, "instance should not be changed if _changes object has no values in it" );
+});
+
+test("get()",
+function () {
+  var noteData = { id: 123, title: 'abc' },
+    note = new Note(noteData);
+
+  var ret = note.get();
+  ok( $.isPlainObject(ret), "should return data object if no argument passed");
+  ok( objectSize(ret) === 2, "returned data object should have as many keys as there are attributes in the model");
+  deepEqual( ret, note._data, "returned data object should have key-value pairs mirroring real attribute names and corresponding values");
+  ok( ret !== noteData, "returned data object should not be (by referecence) exactly that object passed to instance constructor");
+  ok( ret !== note._data, "returned data object should not be (by referecence) obj._data");
+});
+
+test("get(attrName[, attrName2])",
+function () {
+  var noteData = { id: 123, title: 'abc' },
+    note = new Note(noteData);
+
+  deepEqual( note.get('id', 'title'), { id: 123, title: 'abc' }, "should return data object with values for all valid attribute names passed");
+  deepEqual( note.get('id', 'title', 'slug', 1), { id: 123, title: 'abc' }, "should return data object with values for all valid attribute names passed 2");
+  deepEqual( note.get(null, 1, 2), {}, "should return empty object if none of provided attribute names is valid");
+  deepEqual( note.get('title'), { title: 'abc' }, "should return data object with requested value when one attribute name is passed");
+
+  deepEqual( note.get(['id', 'title']), { id: 123, title: 'abc' }, "should return data object with values for all valid attribute names passed (attribute names passed in array)");
+  deepEqual( note.get(['id', 'title', 'slug', 1]), { id: 123, title: 'abc' }, "should return data object with values for all valid attribute names passed (attribute names passed in array) 2");
+  deepEqual( note.get([null, 1, 2]), {}, "should return empty object if none of provided attribute names is valid (attribute names passed in array)");
+  deepEqual( note.get(['title']), { title: 'abc' }, "should return data object with requested value when one attribute name is passed in array");
+});
+
+test("set(attrName, value)",
+function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData),
+    change,
+    data = $.extend({}, note._data);
+
+  note.set();
+  deepEqual( note._data, data, "should change nothing if no arguments provided");
+
+  note.set('title');
+  deepEqual( note._data, data, "should change nothing if 1 arg provided and it is not a data object");
+
+  note.set('slug', 123);
+  deepEqual( note._data, data, "should change nothing if 2 args provided but 1st one is an invalid attribute name");
+
+  note.set(1, 123);
+  deepEqual( note._data, data, "should change nothing if 2 args provided but 1st one is not even a string");
+
+  ok( note.set('title', 'boom') === undefined, "should return undefined");
+  ok( note._data.title == 'boom', "should change the value on attribute");
+
+  note._trigger = function () { change = 1; }
+  note.set('title', 'New');
+  ok( note._data.title == 'New' );
+  ok( change === undefined, "should not trigger change event" );
+});
+
+test("set(dataObject)",
+function () {
+  var noteData = { id: 123, title: 'abc', text: 'text' },
+    note = new Note(noteData),
+    change,
+    data = $.extend({}, note._data);
+
+  note.set({ slug: 123 });
+  deepEqual( note._data, data, "should change nothing if provided data object contains no valid attribute names");
+
+  note.set({ slug: 123, title: "QWERTY" });
+  notDeepEqual( note._data, data, "should do nothing if provided data object contains no valid attribute names");
+  ok( note._data.title == 'QWERTY' && objectSize(note._data) == 2, "should  values on attributes");
+
+  ok( note.set({ 'title': 'boom', id: 2 }) === undefined, "should return undefined");
+  ok( note._data.title == 'boom' && note._data.id == 2, "should change values on attributes");
+
+  note._trigger = function () { change = 1; }
+  note.set({ id: 1, title: 'New' });
+  ok( note._data.id == 1 && note._data.title == 'New' );
+  ok( change === undefined, "should not trigger anything" );
 });
 
 test("_changes — should reflect currently changed attributes and their persisted values",
@@ -422,145 +355,40 @@ function () {
   deepEqual( note._changes, {});
 });
 
-
-test("get(), get(attrName)",
+test("_persist()",
 function () {
-  var noteData = { id: 123, title: 'abc' },
-    note = new Note(noteData);
+  var note = new Note({ id: 1212 }),
+    eventName;
 
-  throws(function () { note.get(null, 1, 2); }, /I202/, "fails when any of provided attribute names is not a string");
+  note._trigger = function (evtName) { eventName = evtName; };
 
-  var ret = note.get();
-  ok( $.isPlainObject(ret), "should return data object if no argument passed");
-  ok( objectSize(ret) === 2, "returned data object should have as many keys as there are attributes in the model");
-  deepEqual( ret, note._data, "returned data object should have key-value pairs mirroring real attribute names and corresponding values");
-  ok( ret !== noteData, "returned data object should not be (by referecence) exactly that object passed to instance constructor");
-  ok( ret !== note._data, "returned data object should not be (by referecence) obj._data");
-
-  ok( note.get('title') === 'abc', "should return single value when one attribute name is passed");
-  throws(function () { note.get('slug'); }, /I202/, "fails when any of provided attribute names is unknown");
-
-  var ret = note.get('id', 'title');
-  ok( $.isPlainObject(ret), "should return data object if more than one attribute name is passed");
-  ok( objectSize(ret) == 2, "returned data object should have exactly same number of keys as number of attibute arguments passed");
-  ok( ret.id === 123 && ret.title === 'abc', "returned object should have key-value pairs mirroring real attribute names and corresponding values");
-});
-
-test("set(attrName, value)",
-function () {
-  var noteData = { id: 123, title: 'abc', text: 'text' },
-    note = new Note(noteData), change;
-
-  throws(function () { note.set(); }, /I203/, "should fail if no arguments provided");
-  throws(function () { note.set('title'); }, /I203/, "should fail if only attribute name provided");
-  throws(function () { note.set('slug', 123); }, /I203/, "should fail if attribute name provided is invalid");
-  ok( note.set('title', 'boom') === undefined, "should return undefined");
-  ok( note._data.title == 'boom', "should change the value returned afterwards by the get method");
-
-  note.bind('change', function () { change = true; });
-  note.set('title', 'New');
-  ok( note._data.title == 'New' );
-  ok( change === undefined, "should not trigger change event" );
-});
-
-test("_hasChangedAfterValidation",
-function () {
-  ok( Note.prototype.__lookupGetter__('_hasChangedAfterValidation'), 'hasChangedAfterValidation getter exists on Class');
-
-  var note = new Note({ id: 1212, title: "ABC" });
+  // if has changed
 
   note.data.title = "New";
-  ok( note._hasChangedAfterValidation === true );
+  ok( note.hasChanged );
+  note._persist();
 
-  note.isValid;
-  ok( note._hasChangedAfterValidation === false );
+  ok( eventName == 'persist', "persist event should be triggered" );
+  ok( note.isPersisted, "instance should become persisted after _perstst method call" );
+  deepEqual( note._changes, {}, "_changes should become empty");
+  deepEqual( note._changesAfterValidation, {}, "_changesAfterValidation should become empty");
 
-  note.data.id = null;
-  ok( note._hasChangedAfterValidation === true );
+  // if not has changed
 
-  note.data.id = undefined;
-  ok( note._hasChangedAfterValidation === true );
+  eventName = null;
+  ok( !note.hasChanged );
+  note._persist();
 
-  note.data.id = 1212;
-  ok( note._hasChangedAfterValidation === true );
+  ok( !eventName, "nothing should be triggered if instance has not changed" );
+  ok( note.isPersisted, "and instance should be persisted anyway after _perstst method call" );
+  deepEqual( note._changes, {}, "and _changes should stay empty");
+  deepEqual( note._changesAfterValidation, {}, "and _changesAfterValidation should stay empty");
 });
 
-test("_changesAfterValidation should reflect currently changed attributes and their persisted values after the validation has occured",
-function () {
-  var note = new Note({ id: 1212, title: "ABC" });
 
-  deepEqual( note._changesAfterValidation, true, "new instances should have _hasChangedAfterValidation property equal to true");
 
-  note.data.title = "NEW";
-  deepEqual( note._changesAfterValidation, { title: "NEW" });
-
-  note.data.id = 123;
-  deepEqual( note._changesAfterValidation, { id: 123, title: "NEW" });
-
-  note.data.id = 1234;
-  deepEqual( note._changesAfterValidation, { id: 1234, title: "NEW" });
-
-  note.data.id = 1212;
-  deepEqual( note._changesAfterValidation, { id: 1212, title: "NEW" });
-
-  note.data.title = "ABC"
-  deepEqual( note._changesAfterValidation, { id: 1212, title: "ABC" });
-
-  note.data = { title: "NEW", id: 1313 };
-  deepEqual( note._changesAfterValidation, { id: 1313, title: "NEW" });
-  note.errors;
-  deepEqual( note._changesAfterValidation, {}, "should be empty after validation (errors)");
-
-  note.data.id = 1234;
-  deepEqual( note._changesAfterValidation, { id: 1234 });
-  note.isValid;
-  deepEqual( note._changesAfterValidation, {}, "should be empty after validation (isValid)");
-});
-
-test("errors",
-function () {
-  ok( Note.prototype.__lookupGetter__('errors'), 'errors getter exists on Class');
-  var note = new Note({ id: 1212, title: "ABC" });
-
-  note.data.id = null;
-  deepEqual( note.errors, { id: Model.errCodes.NULL });
-
-  note.data.title = new Date;
-  deepEqual( note.errors, { id: Model.errCodes.NULL, title: Model.errCodes.WRONG_TYPE });
-
-  note.data = { id: 12, title: "New" };
-  deepEqual( note.errors, {});
-
-  note.data.id = 'string';
-  deepEqual( note.errors, { id: Model.errCodes.WRONG_TYPE });
-
-  Note.validate = function () { return "Yeah!"; }
-  deepEqual( note.errors, { id: Model.errCodes.WRONG_TYPE },
-    "should return last result if no changes where made to instance data");
-
-  note.data.id = 'just-for-changing-after-validation';
-  ok( note.errors == 'Yeah!', "should return the result of Class.validate function call");
-});
-
-test("isValid",
-function () {
-  ok( Note.prototype.__lookupGetter__('isValid'), 'isValid getter exists on Class');
-
-  var note = new Note({ id: 1212, title: "ABC" });
-
-  note.data.id = null;
-  ok( note.isValid == false );
-
-  note.data.title = new Date;
-  ok( note.isValid == false );
-
-  note.data = { id: 12, title: "New" };
-  ok( note.isValid == true );
-
-  note.data.id = 'string';
-  ok( note.isValid == false );
-});
-
+//   E V E N T S
+//   ===========
 
 test("bind(eventName, handler)",
 function () {
@@ -642,31 +470,105 @@ function () {
   note._trigger('change');
   ok (true, "should pass (should do nothing if a known event is triggered though no handlers were previousy bound)");
 
-  Note.bind('change',function () { strC += 'C'; strCI += 'X'; });
+  note._callbacks.change = [];
+  note._callbacks.change.push(function () { strC += 'C'; strCI += 'X'; });
   note._trigger('change');
   ok( strC == "C", "should run handlers bound to Class if any");
 
-  Note.bind('change',function () { strC += 'A'; strCI += 'Y'; });
+  note._callbacks.change.push(function () { strC += 'A'; strCI += 'Y'; });
   note._trigger('change');
   ok( strC == "CCA", "should run handlers bound to Class in the order they were bound if there are more than one");
 
-  note.bind('change',function () { strI += 'B'; strCI += 'Z'; });
+  note._callbacks.change.push(function () { strI += 'B'; strCI += 'Z'; });
   note._trigger('change');
   ok( strI == "B", "should run handlers bound to instance if any");
 
-  note.bind('change',function () { strI += 'E'; strCI += '0'; });
+  note._callbacks.change.push(function () { strI += 'E'; strCI += '0'; });
   note._trigger('change');
   ok( strI == "BBE", "should run handlers bound to instance in the order theu were bound if there are more than one");
 
   ok( strCI == "XXYXYZXYZ0", "should run handlers bound to Class before handlers bound to an instance");
 
   var result = '';
-  note.bind('change', function (changes, bing) {
+  note._callbacks.change.push(function (changes, bing, bong) {
     result += changes.id;
     result += this.data.title;
     result += bing;
+    result += bong;
   });
-  note._trigger('change', { id: 23 }, 'boo!');
+  note._trigger('change', { id: 23 }, 'boo!', 'moo?');
 
-  ok( result == '23ABCboo!', "handler function should receive instance as a context and pass arguments received to the handler");
+  ok( result == '23ABCboo!moo?', "handler function should receive instance as a context and pass arguments received to the handler");
+});
+
+
+
+//   V A L I D A T I O N
+//   ===================
+
+test("_hasChangedAfterValidation",
+function () {
+  var note = new Note({ id: 1212, title: "ABC" });
+
+  note._changesAfterValidation = true;
+  ok( note._hasChangedAfterValidation === true, "should return be true if _hasChangedAfterValidation is true also" );
+
+  note._changesAfterValidation = {};
+  ok( note._hasChangedAfterValidation === false, "should return false if _hasChangedAfterValidation is empty data object" );
+
+  note._changesAfterValidation = { abc: 123 };
+  ok( note._hasChangedAfterValidation === true, "should return false if _hasChangedAfterValidation data object is not empty" );
+});
+
+test("errors",
+function () {
+  var note = new Note({ id: 1212, title: "ABC" }),
+    validateCalled = false,
+    hasChangedCalled = false,
+    hasChanged = false,
+    realHasChangedAfterValidation = note.__lookupGetter__('_hasChangedAfterValidation'),
+    realValidate = Note.validate;
+
+  Note.validate = function () {
+    validateCalled = true;
+    return realValidate.apply(Note, arguments);
+  }
+
+  note.__defineGetter__('_hasChangedAfterValidation', function () {
+    hasChangedCalled = true;
+    hasChanged = realHasChangedAfterValidation.apply(this);
+    return hasChanged;
+  });
+
+  note.data.id = null;
+
+  var errors = note.errors;
+  ok( hasChangedCalled, "should call _hasChangedAfterValidation method");
+  ok( validateCalled, "should call validate method of own constructor");
+  deepEqual( errors, { id: Model.errCodes.NULL }, "should return real errors from validation");
+  ok( errors == note._errors, "should return _errors object" );
+  deepEqual( note._changesAfterValidation, {}, "should empty _changesAfterValidation object" );
+
+
+  validateCalled = false;
+  hasChangedCalled = false;
+  hasChanged = false;
+
+  var errors = note.errors;
+  ok( hasChangedCalled, "should call _hasChangedAfterValidation method");
+  ok( !hasChanged && !validateCalled, "should not call validate method if instance has not changed after previous validation");
+  deepEqual( errors, { id: Model.errCodes.NULL }, "but should still return real errors from validation");
+  ok( errors, note._errors, "and should return _errors object" );
+  deepEqual( note._changesAfterValidation, {}, "and _changesAfterValidation object should be empty" );
+});
+
+test("isValid",
+function () {
+  var note = new Note({ id: 1212, title: "ABC" });
+
+  note._errors = {};
+  ok( note.isValid, "should return true if there are no errors" );
+
+  note._errors = { abc: 123 };
+  ok( !note.isValid, "should return false if there is any error" );
 });

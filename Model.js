@@ -182,7 +182,7 @@ Model = (function () {
         attrName,
         data,
         dataEmpty = true,
-        dataFn;
+        dataFunction;
 
       // COVERED!
       instance._data = {};
@@ -246,45 +246,44 @@ Model = (function () {
       }
 
       // Instance tends to be persisted on initialization!
-      instance._persisted = 1;
+      instance._persisted = true;
 
       // COVERED! [general failures when idAttr is not defined]
       if (persistanceFlag === undefined) {
-        if (cls.idAttr && !data[cls.idAttr]) instance._persisted = 0;
+        if (cls.idAttr && !data[cls.idAttr]) {
+          instance._persisted = false;
+        }
       }
 
       // COVERED! [general failures when idAttr is defined]
       else if (persistanceFlag) {
         if (cls.idAttr) {
           if (!data[cls.idAttr]) {
-            throw new ModelError('C005',
-              "instance cannot be explicitly persisted on initialization "+
-              "if it has no data for its id attribute!");
+            instance._persisted = false;
           }
         }
       }
 
       // COVERED!
       else {
-        instance._persisted = 0;
+        instance._persisted = false;
       }
 
       // COVERED! [general failures when idAttr is not defined]
-      if (instance._persisted > 0 && dataEmpty) {
-        throw new ModelError('C006',
-          "instance cannot be persisted on initialization if it has no data!");
+      if (instance._persisted && dataEmpty) {
+        instance._persisted = false;
       }
 
       // COVERED!
-      instance._data2 = dataFn = function () {
+      instance._data2 = dataFunction = function () {
         if (arguments.length == 1 && arguments[0] === undefined) {
           return instance;
         }
-        return $.extend({}, instance._data);
+        return this.get.apply(this, arguments);
       }
 
       // COVERED!
-      dataFn.prototype = dataFn.__proto__ = DataFunctionPrototype;
+      dataFunction.prototype = dataFunction.__proto__ = DataFunctionPrototype;
 
       // COVERED!
       instance._trigger('initialize');
@@ -306,7 +305,6 @@ Model = (function () {
     Class.attributeNames = attrData.attributeNames;
     Class.attributeValidators = attrData.attributeValidators;
 
-
     // COVERED!
     // Extend DataFunctionPrototype with attribute getters and setters.
     for (i = 0; i < Class.attributeNames.length; i++) {
@@ -321,7 +319,6 @@ Model = (function () {
         });
       })(Class.attributeNames[i]);
     }
-
 
     var Mediator = new Function;
     Mediator.prototype = private.InstancePrototype;
@@ -353,8 +350,12 @@ Model = (function () {
   }
 
   Class.prototype.validate = function () {
-    var cls = this, instance, attrName, value;
+    var cls = this,
+      instance,
+      attrName,
+      value;
 
+    // COVERED!
     if (arguments.length == 0 || arguments.length > 2) {
       throw new ModelError('C102',
         "Class.validate accepts either 1 argument, a model instance "+
@@ -362,17 +363,21 @@ Model = (function () {
         "and its a value to validate!");
     }
 
+    // COVERED!
     else if (arguments.length == 1) {
       instance = arguments[0];
 
+      // COVERED!
       if (instance.constructor !== cls) {
         throw new ModelError('C103',
           "Provided argument is not an instance of same class! "+
           "("+cls.className+")");
       }
 
-      var errors = {},
-        i, attrName, err;
+      var i,
+        errors = {},
+        attrName,
+        err;
 
       for (i = 0; i < cls.attributeNames.length; i++) {
         attrName = cls.attributeNames[i];
@@ -390,15 +395,19 @@ Model = (function () {
       attrName = arguments[0];
       value = arguments[1];
 
+      // COVERED!
       if (this.attributeNames.indexOf(attrName) == -1) {
         throw new ModelError('C104',
           "Class.validate accepts two arguments: a valid string attributeName "+
           "and a value to validate!");
       }
 
-      var validators = cls.attributeValidators[attrName],
-        i, err, validator;
+      var i,
+        validators = cls.attributeValidators[attrName],
+        err,
+        validator;
 
+      // COVERED!
       if (value === null || value === undefined) {
         if (cls.requiredAttributes.indexOf(attrName) >= 0) {
           return Model.errCodes.NULL;
@@ -407,13 +416,22 @@ Model = (function () {
         }
       }
 
+      // COVERED!
       for (i = 0; i < validators.length; i++) {
         validator = validators[i];
+
+        // COVERED!
         if (typeof(validator) == 'string') {
           err = Model._validators[validator](value);
-        } else if ($.isArray(validator)) {
+        }
+
+        // COVERED!
+        else if ($.isArray(validator)) {
           err = Model._validators[validator[0]](value, validator[1]);
-        } else if (typeof(validator) == 'function') {
+        }
+
+        // COVERED!
+        else if (typeof(validator) == 'function') {
           err = validator(value);
         }
 
@@ -422,97 +440,26 @@ Model = (function () {
         }
       }
     }
-  };
+  }
 
 
 
   var InstancePrototype = {};
 
-  // COVERED!
-  InstancePrototype.__defineGetter__('data', function () {
-    return this._data2;
-  });
+
+  //   C H A N G E S  ,  G E T T E R S   &   S E T T E R S
+  //   ===================================================
 
   // COVERED!
-  InstancePrototype.__defineSetter__('data', function (data) {
-    if (!$.isPlainObject(data)) {
-      throw new ModelError('I201',
-        "instance.data= setter accepts plain objects only!");
-    }
-
-    var cls = this.constructor,
-      instance = this,
-      changes = {};
-
-    for (var attrName in data) {
-      if (cls.attributeNames.indexOf(attrName) >= 0) {
-        if (instance._set(attrName, data[attrName], false) === true) {
-          changes[attrName] = data[attrName];
-        }
-      }
-    }
-
-    this._trigger('change', changes);
+  InstancePrototype.__defineGetter__('isNew', function () {
+    // Instance is new if it has been never persisted.
+    return !this._persisted;
   });
 
   // COVERED!
   InstancePrototype.__defineGetter__('isPersisted', function () {
-    return this._persisted > 0 && !this.hasChanged;
+    return this._persisted && !this.hasChanged;
   });
-
-  // COVERED!
-  InstancePrototype.__defineGetter__('isNew', function () {
-    // If instance has been persisted once, it is not new.
-    return this._persisted == 0;
-  });
-
-  // COVERED!
-  InstancePrototype.__defineGetter__('hasChanged', function () {
-    // If any change, return true.
-    for (var k in this._changes) return true;
-    return false;
-  });
-
-  // COVERED!
-  InstancePrototype.get = function (attr) {
-    if (!arguments.length) {
-      return this.data();
-    }
-
-    var cls = this.constructor;
-
-    for (var i = 0; i < arguments.length; i++) {
-      if (typeof(arguments[i]) != 'string' ||
-            cls.attributeNames.indexOf(arguments[i]) == -1) {
-        throw new ModelError('I202',
-          "instance.get method should be provided "+
-          "valid attribute names only!");
-      }
-    }
-
-    if (arguments.length == 1) {
-      return this._get(attr);
-    }
-
-    var data = {}; for (var i = 0; i < arguments.length; i++) {
-      data[ arguments[i] ] = this._data[ arguments[i] ];
-    }
-
-    return data;
-  };
-
-  // COVERED!
-  InstancePrototype.set = function (attrName, value) {
-    var cls = this.constructor;
-    if (typeof(attrName) != 'string' ||
-          cls.attributeNames.indexOf(attrName) == -1 ||
-            arguments.length != 2) {
-      throw new ModelError('I203',
-        "instance.set method should be provided two argument and first "+
-        "of them should be a valid string attribute name!");
-    }
-    this._set(attrName, value, false);
-  };
 
   // COVERED!
   InstancePrototype._get = function (attrName) {
@@ -546,6 +493,100 @@ Model = (function () {
   }
 
   // COVERED!
+  InstancePrototype.__defineGetter__('data', function () {
+    return this._data2;
+  });
+
+  // COVERED!
+  InstancePrototype.__defineSetter__('data', function (data) {
+    // COVERED!
+    if (!$.isPlainObject(data)) {
+      throw new ModelError('I201',
+        "instance.data= setter accepts plain objects only!");
+    }
+
+    var cls = this.constructor,
+      instance = this,
+      changes = {};
+
+    for (var attrName in data) {
+      if (cls.attributeNames.indexOf(attrName) >= 0) {
+        if (instance._set(attrName, data[attrName], false) === true) {
+          changes[attrName] = data[attrName];
+        }
+      }
+    }
+
+    // COVERED!
+    this._trigger('change', changes);
+  });
+
+  // COVERED!
+  InstancePrototype.__defineGetter__('hasChanged', function () {
+    // If any change, return true.
+    for (var k in this._changes) return true;
+    return false;
+  });
+
+  // COVERED!
+  InstancePrototype.get = function (attr) {
+    var i,
+      cls = this.constructor,
+      data = {},
+      attributeNames = Array.prototype.slice.call(arguments);
+
+    if (!attributeNames.length) {
+      return $.extend({}, this._data);
+    }
+
+    if ($.isArray(arguments[0])) {
+      attributeNames = arguments[0];
+    }
+
+    for (i = 0; i < attributeNames.length; i++) {
+      if (cls.attributeNames.indexOf(attributeNames[i]) >= 0) {
+        data[ attributeNames[i] ] = this._data[ attributeNames[i] ];
+      }
+    }
+
+    return data;
+  };
+
+  // COVERED!
+  InstancePrototype.set = function (attrName, value) {
+    var cls = this.constructor,
+      attrName,
+      data = {};
+
+    if (arguments.length == 1 && $.isPlainObject(arguments[0])) {
+      data = arguments[0];
+    }
+
+    else if (arguments.length == 2) {
+      data[ attrName ] = value;
+    }
+
+    for (attrName in data) {
+      if (cls.attributeNames.indexOf(attrName) >= 0) {
+        this._set(attrName, data[attrName], false);
+      }
+    }
+  };
+
+  // COVERED!
+  InstancePrototype._persist = function () {
+    if (this.hasChanged) {
+      this._changes = {};
+      this._changesAfterValidation = {};
+      this._trigger('persist');
+    }
+  };
+
+
+  //   E V E N T S
+  //   ===========
+
+  // COVERED!
   InstancePrototype.bind = function (eventName, handler) {
     if (typeof(eventName) != 'string' ||
           Model._instanceEventNames.indexOf(eventName) == -1 ||
@@ -560,7 +601,7 @@ Model = (function () {
     }
 
     this._callbacks[eventName].push(handler);
-  }
+  };
 
   // COVERED!
   InstancePrototype._trigger = function () {
@@ -587,7 +628,11 @@ Model = (function () {
         this._callbacks[eventName][i].apply(this, args);
       }
     }
-  }
+  };
+
+
+  //   V A L I D A T I O N
+  //   ===================
 
   // COVERED!
   InstancePrototype.__defineGetter__('_hasChangedAfterValidation', function () {
@@ -611,14 +656,6 @@ Model = (function () {
     return true;
   });
 
-  // COVERED!
-  InstancePrototype._persist = function () {
-    if (this.hasChanged) {
-      this._changes = {};
-      this._changesAfterValidation = {};
-      this._trigger('persist');
-    }
-  };
 
 
 
@@ -657,7 +694,7 @@ Model = (function () {
   // COVERED!
   Model._classes = {};
   Model._validators = {};
-  Model._classEventNames = 'initialize change'.split(' ');
+  Model._classEventNames = 'initialize change persist'.split(' ');
   Model._instanceEventNames = 'change persist'.split(' ');
 
   // COVERED!
