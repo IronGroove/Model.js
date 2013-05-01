@@ -8,10 +8,15 @@ Define your data models in a simple readable way.
 ```javascript
 var Note = new Model('Note', function () {
   this.attr('id!', 'number');
-  this.attr('title+', 'string', [ 'minlength', 8 ]);
+  this.attr('title+', 'string', 'nonempty');
+  this.attr('lang+', 'string', [ 'in', ['en', 'uk', 'ru']]);
   this.attr('text', 'string');
 });
+
+// title+ means that title attribute value cannot be null.
+// id! means that id attribute is the primary key.
 ```
+
 
 # Work
 
@@ -19,9 +24,10 @@ Get syntactical sugar for working with your data.
 
 ```javascript
 var note = new Note({ title: "Model.js is awesome" });
-note.data.title = '';
 note.isNew // true
 note.hasChanged // false
+note.data.title = '';
+note.hasChanged // true
 ```
 
 
@@ -29,7 +35,7 @@ Enjoy easy one-method data validation according to attribute definitions.
 
 ```javascript
 note.isValid // false
-note.errors  // { title: Model.errCodes.TOO_SHORT }
+note.errors  // { title: Model.errCodes.EMPTY }
 ```
 
 
@@ -45,6 +51,8 @@ Note.prototype.save = function () {
   window.localStorage.setItem("Note:"+data.id, JSON.stringify(data));
   note._persist();
 }
+
+// NOTE _persist() private call is needed to change inner state and trigger the persist event.
 ```
 
 
@@ -56,7 +64,7 @@ Bind event handlers to specific instances.
 
 ```javascript
 note.bind('change', function (changes) {
-  if (changes.title) alert("Title changed!");
+  if (changes.title) $('h1').html(changes.title);
 });
 ```
 
@@ -64,8 +72,11 @@ Or bind handlers to classes, so that they become common to all instances.
 
 ```javascript
 Note.bind('initialize', function () {
-  if (this.data.id) {
-    alert("Note #"+this.data.id+" is initialized!");
-  }
+  if (!this.data.lang) this.set('lang', 'en');
 });
 ```
+
+
+# Documentation
+
+Please refer to [the Model.js wiki](https://github.com/IronGroove/Model.js/wiki) for documentation and check out [the demo](https://raw.github.com/IronGroove/Model.js/master/demo/demo.html) for an example usage.
