@@ -1,8 +1,138 @@
-// TODO Get rid of $.isArray, $.isPlainObject, $.trim and $.extend jQuery sugar.
 // TODO Turn Class.attributeNames into an immutable getter.
 
 
 Model = (function () {
+
+  function isArray(v) {
+    return Object.prototype.toString.call(v) === '[object Array]';
+  }
+
+  function extend() {
+    var options, name, src, copy, copyIsArray, clone, target = arguments[0] || {},
+      i = 1,
+      length = arguments.length,
+      deep = false,
+      toString = Object.prototype.toString,
+      hasOwn = Object.prototype.hasOwnProperty,
+      push = Array.prototype.push,
+      slice = Array.prototype.slice,
+      trim = String.prototype.trim,
+      indexOf = Array.prototype.indexOf,
+      class2type = {
+        "[object Boolean]": "boolean",
+        "[object Number]": "number",
+        "[object String]": "string",
+        "[object Function]": "function",
+        "[object Array]": "array",
+        "[object Date]": "date",
+        "[object RegExp]": "regexp",
+        "[object Object]": "object"
+      },
+      jQuery = {
+        isFunction: function (obj) {
+          return jQuery.type(obj) === "function"
+        },
+        isArray: Array.isArray ||
+        function (obj) {
+          return jQuery.type(obj) === "array"
+        },
+        isWindow: function (obj) {
+          return obj != null && obj == obj.window
+        },
+        isNumeric: function (obj) {
+          return !isNaN(parseFloat(obj)) && isFinite(obj)
+        },
+        type: function (obj) {
+          return obj == null ? String(obj) : class2type[toString.call(obj)] || "object"
+        },
+        isPlainObject: function (obj) {
+          if (!obj || jQuery.type(obj) !== "object" || obj.nodeType) {
+            return false
+          }
+          try {
+            if (obj.constructor && !hasOwn.call(obj, "constructor") && !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+              return false
+            }
+          } catch (e) {
+            return false
+          }
+          var key;
+          for (key in obj) {}
+          return key === undefined || hasOwn.call(obj, key)
+        }
+      };
+
+      if (typeof target === "boolean") {
+        deep = target;
+        target = arguments[1] || {};
+        i = 2;
+      }
+      if (typeof target !== "object" && !jQuery.isFunction(target)) {
+        target = {}
+      }
+      if (length === i) {
+        target = this;
+        --i;
+      }
+      for (i; i < length; i++) {
+        if ((options = arguments[i]) != null) {
+          for (name in options) {
+            src = target[name];
+            copy = options[name];
+            if (target === copy) {
+              continue
+            }
+            if (deep && copy && (jQuery.isPlainObject(copy) || (copyIsArray = jQuery.isArray(copy)))) {
+              if (copyIsArray) {
+                copyIsArray = false;
+                clone = src && jQuery.isArray(src) ? src : []
+              } else {
+                clone = src && jQuery.isPlainObject(src) ? src : {};
+              }
+              // WARNING: RECURSION
+              target[name] = extend(deep, clone, copy);
+            } else if (copy !== undefined) {
+              target[name] = copy;
+            }
+          }
+        }
+      }
+    return target;
+  }
+
+  function isPlainObject(v) {
+    var toString = Object.prototype.toString,
+      hasOwn = Object.prototype.hasOwnProperty,
+      class2type = {
+        "[object Boolean]": "boolean",
+        "[object Number]": "number",
+        "[object String]": "string",
+        "[object Function]": "function",
+        "[object Array]": "array",
+        "[object Date]": "date",
+        "[object RegExp]": "regexp",
+        "[object Object]": "object"
+      },
+      jQuery = {
+        isPlainObject: function (obj) {
+          if (!obj || (obj == null ? String(obj) : class2type[toString.call(obj)] || "object") !== "object" || obj.nodeType) {
+            return false
+          }
+          try {
+            if (obj.constructor && !hasOwn.call(obj, "constructor") && !hasOwn.call(obj.constructor.prototype, "isPrototypeOf")) {
+              return false
+            }
+          } catch (e) {
+            return false
+          }
+          var key;
+          for (key in obj) {}
+          return key === undefined || hasOwn.call(obj, key)
+        }
+      };
+    return jQuery.isPlainObject(v);
+  }
+
 
   var MC,
     private = {};
@@ -79,7 +209,7 @@ Model = (function () {
       switch (true) {
         case typeof(args[i]) == 'function': break;
         case typeof(args[i]) == 'string' && /^[a-z]+$/i.test(args[i]): break;
-        case $.isArray(args[i]) && args[i].length == 2 &&
+        case isArray(args[i]) && args[i].length == 2 &&
           typeof(args[i][0]) == 'string' && /^[a-z]+$/i.test(args[i][0]): break;
         default:
           throw new ModelError('MC203',
@@ -135,7 +265,7 @@ Model = (function () {
       for (i = 0; i < validators.length; i++) {
         switch (true) {
           case typeof(validators[i]) == 'function': continue; break;
-          case $.isArray(validators[i]): validatorName = validators[i][0]; break;
+          case isArray(validators[i]): validatorName = validators[i][0]; break;
           default: validatorName = validators[i];
         }
         if (!Model._validators[validatorName]) {
@@ -205,7 +335,7 @@ Model = (function () {
           persistanceFlag = arguments[0];
           data = {};
         }
-        else if ($.isPlainObject(arguments[0])) {
+        else if (isPlainObject(arguments[0])) {
           data = arguments[0];
         }
         else {
@@ -219,7 +349,7 @@ Model = (function () {
       // COVERED!
       else if (arguments.length == 2) {
         if (typeof(arguments[0]) == 'boolean' &&
-              $.isPlainObject(arguments[1])) {
+              isPlainObject(arguments[1])) {
           persistanceFlag = arguments[0];
           data = arguments[1];
         }
@@ -426,7 +556,7 @@ Model = (function () {
         }
 
         // COVERED!
-        else if ($.isArray(validator)) {
+        else if (isArray(validator)) {
           err = Model._validators[validator[0]](value, validator[1]);
         }
 
@@ -500,7 +630,7 @@ Model = (function () {
   // COVERED!
   InstancePrototype.__defineSetter__('data', function (data) {
     // COVERED!
-    if (!$.isPlainObject(data)) {
+    if (!isPlainObject(data)) {
       throw new ModelError('I201',
         "instance.data= setter accepts plain objects only!");
     }
@@ -536,10 +666,10 @@ Model = (function () {
       attributeNames = Array.prototype.slice.call(arguments);
 
     if (!attributeNames.length) {
-      return $.extend({}, this._data);
+      return extend({}, this._data);
     }
 
-    if ($.isArray(arguments[0])) {
+    if (isArray(arguments[0])) {
       attributeNames = arguments[0];
     }
 
@@ -558,7 +688,7 @@ Model = (function () {
       attrName,
       data = {};
 
-    if (arguments.length == 1 && $.isPlainObject(arguments[0])) {
+    if (arguments.length == 1 && isPlainObject(arguments[0])) {
       data = arguments[0];
     }
 
@@ -585,7 +715,11 @@ Model = (function () {
   InstancePrototype.revert = function () {
     if (this.hasChanged) {
       for (var attrName in this._changes) {
-        this._data[attrName] = this._changes[attrName];
+        if (this._changes[attrName] === undefined) {
+          delete this._data[attrName];
+        } else {
+          this._data[attrName] = this._changes[attrName];
+        }
       }
       this._changes = {};
       this._changesAfterValidation = {};

@@ -64,7 +64,8 @@ Bind event handlers to specific instances.
 
 ```javascript
 note.bind('change', function (changes) {
-  if (changes.title) $('h1').html(changes.title);
+  // NOTE !!changes.title condition is false when title is empty.
+  if (changes.title !== undefined) $('h1').html(changes.title);
 });
 ```
 
