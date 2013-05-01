@@ -5,12 +5,12 @@ test("_classes", function () {
 });
 
 test("_classEventNames", function () {
-  var names = "initialize change";
+  var names = "initialize change persist revert";
   deepEqual( Model._classEventNames, names.split(' '), names);
 });
 
 test("_instanceEventNames", function () {
-  var names = "change persist";
+  var names = "change persist revert";
   deepEqual( Model._instanceEventNames, names.split(' '), names);
 });
 

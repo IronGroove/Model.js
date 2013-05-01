@@ -61,3 +61,19 @@ function () {
 
   ok( persisted );
 });
+
+test("revert",
+function () {
+  var reverted;
+
+  Note.bind('revert', function (change) {
+    reverted = true;
+  });
+
+  var note = new Note({ id: 123, title: "ABC" });
+  note.data.title = "Some";
+
+  note.revert();
+
+  ok( reverted );
+});

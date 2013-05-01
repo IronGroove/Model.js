@@ -582,6 +582,17 @@ Model = (function () {
     }
   };
 
+  InstancePrototype.revert = function () {
+    if (this.hasChanged) {
+      for (var attrName in this._changes) {
+        this._data[attrName] = this._changes[attrName];
+      }
+      this._changes = {};
+      this._changesAfterValidation = {};
+      this._trigger('revert');
+    }
+  };
+
 
   //   E V E N T S
   //   ===========
@@ -694,8 +705,8 @@ Model = (function () {
   // COVERED!
   Model._classes = {};
   Model._validators = {};
-  Model._classEventNames = 'initialize change persist'.split(' ');
-  Model._instanceEventNames = 'change persist'.split(' ');
+  Model._classEventNames = 'initialize change persist revert'.split(' ');
+  Model._instanceEventNames = 'change persist revert'.split(' ');
 
   // COVERED!
   Model.errCodes = {};

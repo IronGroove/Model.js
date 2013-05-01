@@ -385,6 +385,38 @@ function () {
   deepEqual( note._changesAfterValidation, {}, "and _changesAfterValidation should stay empty");
 });
 
+test("revert()",
+function () {
+  var note = new Note({ id: 1212 }),
+    eventName;
+
+  note._trigger = function (evtName) { eventName = evtName; };
+
+
+  // if has changed
+
+  note.data.title = "New";
+  ok( note.hasChanged );
+  note.revert();
+
+  ok( eventName == 'revert', "revert event should be triggered" );
+  ok( note.isPersisted, "instance should become persisted after revert method call" );
+  deepEqual( note._changes, {}, "_changes should become empty");
+  deepEqual( note._changesAfterValidation, {}, "_changesAfterValidation should become empty");
+
+
+  // if not has changed
+
+  eventName = null;
+  ok( !note.hasChanged );
+  note.revert();
+
+  ok( !eventName, "nothing should be triggered if instance has not changed" );
+  ok( note.isPersisted, "and instance should be persisted anyway after revert method call" );
+  deepEqual( note._changes, {}, "and _changes should stay empty");
+  deepEqual( note._changesAfterValidation, {}, "and _changesAfterValidation should stay empty");
+});
+
 
 
 //   E V E N T S

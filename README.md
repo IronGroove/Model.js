@@ -69,10 +69,3 @@ Note.bind('initialize', function () {
   }
 });
 ```
-
-
-# TODO
-
-- beforeValidate event
-- revert() and revert event
-- Model.dispose('Note', id)
