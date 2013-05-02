@@ -385,7 +385,7 @@ function () {
   deepEqual( note._changesAfterValidation, {}, "and _changesAfterValidation should stay empty");
 });
 
-test("revert()",
+test("_revert()",
 function () {
   var note = new Note({ id: 1212 }),
     eventName;
@@ -397,10 +397,10 @@ function () {
 
   note.data.title = "New";
   ok( note.hasChanged );
-  note.revert();
+  note._revert();
 
   ok( eventName == 'revert', "revert event should be triggered" );
-  ok( note.isPersisted, "instance should become persisted after revert method call" );
+  ok( note.isPersisted, "instance should become persisted after _revert method call" );
   deepEqual( note._changes, {}, "_changes should become empty");
   deepEqual( note._changesAfterValidation, {}, "_changesAfterValidation should become empty");
 
@@ -409,7 +409,7 @@ function () {
 
   eventName = null;
   ok( !note.hasChanged );
-  note.revert();
+  note._revert();
 
   ok( !eventName, "nothing should be triggered if instance has not changed" );
   ok( note.isPersisted, "and instance should be persisted anyway after revert method call" );
@@ -429,29 +429,29 @@ function () {
     noop2 = new Function,
     noop3 = new Function;
 
-  throws(function () { note.bind(); },                    /I204/, "should fail if no arguments specified!");
-  throws(function () { note.bind(true); },                /I204/, "should fail if first argument is boolean true!");
-  throws(function () { note.bind(false); },               /I204/, "should fail if first argument is boolean false!");
-  throws(function () { note.bind(undefined); },           /I204/, "should fail if first argument is undefined!");
-  throws(function () { note.bind(1234); },                /I204/, "should fail if first argument is an number!");
-  throws(function () { note.bind(null); },                /I204/, "should fail if first argument is null!");
-  throws(function () { note.bind([]); },                  /I204/, "should fail if first argument is an array!");
-  throws(function () { note.bind({}); },                  /I204/, "should fail if first argument is an object!");
-  throws(function () { note.bind(/re/); },                /I204/, "should fail if first argument is a regexp!");
-  throws(function () { note.bind($.noop); },              /I204/, "should fail if first argument is a function!");
-  throws(function () { note.bind('string'); },            /I204/, "should fail if first argument is an unknown name!");
-  throws(function () { note.bind('str', $.noop); },       /I204/, "should fail if first argument is an unknown name though 2nd is a function!");
+  throws(function () { note.bind(); },                    /I202/, "should fail if no arguments specified!");
+  throws(function () { note.bind(true); },                /I202/, "should fail if first argument is boolean true!");
+  throws(function () { note.bind(false); },               /I202/, "should fail if first argument is boolean false!");
+  throws(function () { note.bind(undefined); },           /I202/, "should fail if first argument is undefined!");
+  throws(function () { note.bind(1234); },                /I202/, "should fail if first argument is an number!");
+  throws(function () { note.bind(null); },                /I202/, "should fail if first argument is null!");
+  throws(function () { note.bind([]); },                  /I202/, "should fail if first argument is an array!");
+  throws(function () { note.bind({}); },                  /I202/, "should fail if first argument is an object!");
+  throws(function () { note.bind(/re/); },                /I202/, "should fail if first argument is a regexp!");
+  throws(function () { note.bind($.noop); },              /I202/, "should fail if first argument is a function!");
+  throws(function () { note.bind('string'); },            /I202/, "should fail if first argument is an unknown name!");
+  throws(function () { note.bind('str', $.noop); },       /I202/, "should fail if first argument is an unknown name though 2nd is a function!");
 
-  throws(function () { note.bind('change'); },            /I204/, "should fail if second argument is omitted");
-  throws(function () { note.bind('change', true); },      /I204/, "should fail if second argument is not a function (true boolean supplied)");
-  throws(function () { note.bind('change', false); },     /I204/, "should fail if second argument is not a function (false boolean supplied)");
-  throws(function () { note.bind('change', undefined); }, /I204/, "should fail if second argument is not a function (undefined supplied)");
-  throws(function () { note.bind('change', 1234); },      /I204/, "should fail if second argument is not a function (number supplied)");
-  throws(function () { note.bind('change', null); },      /I204/, "should fail if second argument is not a function (null supplied)");
-  throws(function () { note.bind('change', []); },        /I204/, "should fail if second argument is not a function (array supplied)");
-  throws(function () { note.bind('change', {}); },        /I204/, "should fail if second argument is not a function (object supplied)");
-  throws(function () { note.bind('change', 'str'); },     /I204/, "should fail if second argument is not a function (string supplied)");
-  throws(function () { note.bind('change', /re/); },      /I204/, "should fail if second argument is not a function (regexp supplied)");
+  throws(function () { note.bind('change'); },            /I202/, "should fail if second argument is omitted");
+  throws(function () { note.bind('change', true); },      /I202/, "should fail if second argument is not a function (true boolean supplied)");
+  throws(function () { note.bind('change', false); },     /I202/, "should fail if second argument is not a function (false boolean supplied)");
+  throws(function () { note.bind('change', undefined); }, /I202/, "should fail if second argument is not a function (undefined supplied)");
+  throws(function () { note.bind('change', 1234); },      /I202/, "should fail if second argument is not a function (number supplied)");
+  throws(function () { note.bind('change', null); },      /I202/, "should fail if second argument is not a function (null supplied)");
+  throws(function () { note.bind('change', []); },        /I202/, "should fail if second argument is not a function (array supplied)");
+  throws(function () { note.bind('change', {}); },        /I202/, "should fail if second argument is not a function (object supplied)");
+  throws(function () { note.bind('change', 'str'); },     /I202/, "should fail if second argument is not a function (string supplied)");
+  throws(function () { note.bind('change', /re/); },      /I202/, "should fail if second argument is not a function (regexp supplied)");
 
   note.bind('change', noop1);
   deepEqual( note._callbacks, { change: [ noop1 ] },
@@ -487,17 +487,17 @@ function () {
     note = new Note({ id: 123, title: "ABC" });
 
   // should fail unless 1st argument is not a string name of a known event
-  throws(function () { note._trigger(); },          /I205/, "should fail if no arguments specified");
-  throws(function () { note._trigger(true); },      /I205/, "should fail if first argument is boolean true");
-  throws(function () { note._trigger(false); },     /I205/, "should fail if first argument is boolean false");
-  throws(function () { note._trigger(undefined); }, /I205/, "should fail if first argument is undefined");
-  throws(function () { note._trigger(1234); },      /I205/, "should fail if first argument is an number");
-  throws(function () { note._trigger(null); },      /I205/, "should fail if first argument is null");
-  throws(function () { note._trigger([]); },        /I205/, "should fail if first argument is an array");
-  throws(function () { note._trigger({}); },        /I205/, "should fail if first argument is an object");
-  throws(function () { note._trigger(/re/); },      /I205/, "should fail if first argument is a regexp");
-  throws(function () { note._trigger($.noop); },    /I205/, "should fail if first argument is a function");
-  throws(function () { note._trigger('string'); },  /I205/, "should fail if first argument is an unknown name");
+  throws(function () { note._trigger(); },          /I203/, "should fail if no arguments specified");
+  throws(function () { note._trigger(true); },      /I203/, "should fail if first argument is boolean true");
+  throws(function () { note._trigger(false); },     /I203/, "should fail if first argument is boolean false");
+  throws(function () { note._trigger(undefined); }, /I203/, "should fail if first argument is undefined");
+  throws(function () { note._trigger(1234); },      /I203/, "should fail if first argument is an number");
+  throws(function () { note._trigger(null); },      /I203/, "should fail if first argument is null");
+  throws(function () { note._trigger([]); },        /I203/, "should fail if first argument is an array");
+  throws(function () { note._trigger({}); },        /I203/, "should fail if first argument is an object");
+  throws(function () { note._trigger(/re/); },      /I203/, "should fail if first argument is a regexp");
+  throws(function () { note._trigger($.noop); },    /I203/, "should fail if first argument is a function");
+  throws(function () { note._trigger('string'); },  /I203/, "should fail if first argument is an unknown name");
 
   note._trigger('change');
   ok (true, "should pass (should do nothing if a known event is triggered though no handlers were previousy bound)");

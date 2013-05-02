@@ -1,4 +1,11 @@
-// TODO Turn Class.attributeNames into an immutable getter.
+/*
+ * Model.js v0.1
+ *
+ * Copyright 2013 by Mykhaylo Gavrylyuk, http://www.irongroove.com
+ * Licensed under the MIT license
+ *
+ * Date: Fri May  3 00:54:28 EEST 2013
+ */
 
 
 Model = (function () {
@@ -464,12 +471,12 @@ Model = (function () {
     var cls = this;
     if (arguments.length != 2 ||
           typeof(eventName) != 'string' ||
-            Model._classEventNames.indexOf(eventName) == -1 ||
+            Model._eventNames.indexOf(eventName) == -1 ||
               typeof(handler) != 'function') {
       throw new ModelError('C101',
         "Class.bind accepts two arguments: a valid string eventName "+
         "and a function eventHandler! "+
-        "Valid event names are: "+Model._classEventNames.join(',')+".");
+        "Valid event names are: "+Model._eventNames.join(',')+".");
     }
 
     if (cls._callbacks[eventName] === undefined) {
@@ -712,7 +719,7 @@ Model = (function () {
     }
   };
 
-  InstancePrototype.revert = function () {
+  InstancePrototype._revert = function () {
     if (this.hasChanged) {
       for (var attrName in this._changes) {
         if (this._changes[attrName] === undefined) {
@@ -734,9 +741,9 @@ Model = (function () {
   // COVERED!
   InstancePrototype.bind = function (eventName, handler) {
     if (typeof(eventName) != 'string' ||
-          Model._instanceEventNames.indexOf(eventName) == -1 ||
+          Model._eventNames.indexOf(eventName) == -1 ||
             typeof(handler) != 'function') {
-      throw new ModelError('I204',
+      throw new ModelError('I202',
         "instance.bind method should be provided with a valid "+
         "string eventName and a function handler!");
     }
@@ -756,9 +763,8 @@ Model = (function () {
       eventName = args.shift();
 
     if (typeof(eventName) != 'string' ||
-         !(Model._classEventNames.indexOf(eventName) >= 0 ||
-           Model._instanceEventNames.indexOf(eventName)  >= 0 )) {
-      throw new ModelError('I205',
+         Model._eventNames.indexOf(eventName) == -1) {
+      throw new ModelError('I203',
         "instance._trigger should be provided a valid event name!");
     }
 
@@ -839,8 +845,7 @@ Model = (function () {
   // COVERED!
   Model._classes = {};
   Model._validators = {};
-  Model._classEventNames = 'initialize change persist revert'.split(' ');
-  Model._instanceEventNames = 'change persist revert'.split(' ');
+  Model._eventNames = 'initialize change persist revert'.split(' ');
 
   // COVERED!
   Model.errCodes = {};
@@ -905,6 +910,7 @@ Model = (function () {
 
 
   // Expose private functions for testing.
+  // Don't worry, next lines are removed in minimized production version.
 
   if (window && window.MODEL_JS_TEST_MODE) {
     Model.private = private;
