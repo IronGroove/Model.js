@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Model.js : Models for javascripting" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Model.js</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/IronGroove/Model.js">View on GitHub</a>
+
+          <h1 id="project_title">Model.js</h1>
+          <h2 id="project_tagline">Models for javascripting</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/IronGroove/Model.js/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/IronGroove/Model.js/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>Models for javascripting</h1>
+
+<p>Model.js introduces new simple way of maintaining model layers in javascript applications. As of version v0.1, this library provides handy and readable data describing, data validation capabilities and event machinery for bindings on major data lifecycle events.</p>
+
+<p><em>All this is better explained by example.</em></p>
+
+<div class="highlight"><pre><span class="c1">// DESCRIBE</span>
+<span class="kd">var</span> <span class="nx">Note</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Model</span><span class="p">(</span><span class="s1">'Note'</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">'id!'</span><span class="p">,</span> <span class="s1">'number'</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">'title+'</span><span class="p">,</span> <span class="s1">'string'</span><span class="p">,</span> <span class="s1">'nonempty'</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">'lang+'</span><span class="p">,</span> <span class="s1">'string'</span><span class="p">,</span> <span class="p">[</span> <span class="s1">'in'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'en'</span><span class="p">,</span><span class="s1">'uk'</span><span class="p">,</span><span class="s1">'ru'</span><span class="p">]]);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">'text'</span><span class="p">,</span> <span class="s1">'string'</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="nx">Note</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="s1">'initialize'</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">lang</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">'lang'</span><span class="p">,</span> <span class="s1">'en'</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// AMPLIFY</span>
+<span class="nx">Note</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">save</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">note</span> <span class="o">=</span> <span class="k">this</span><span class="p">,</span>
+    <span class="nx">data</span> <span class="o">=</span> <span class="nx">note</span><span class="p">.</span><span class="nx">data</span><span class="p">();</span>
+  <span class="nb">window</span><span class="p">.</span><span class="nx">localStorage</span><span class="p">.</span><span class="nx">setItem</span><span class="p">(</span><span class="s2">"Note"</span><span class="o">+</span><span class="nx">data</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+  <span class="nx">note</span><span class="p">.</span><span class="nx">_persist</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="kd">var</span> <span class="nx">note</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Note</span><span class="p">({</span> <span class="nx">title</span><span class="o">:</span> <span class="s2">"Hello"</span> <span class="p">});</span>
+
+<span class="nx">assert</span><span class="p">(</span> <span class="nx">note</span><span class="p">.</span><span class="nx">isNew</span> <span class="p">);</span>
+<span class="nx">assert</span><span class="p">(</span> <span class="nx">note</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">title</span> <span class="o">==</span> <span class="s2">"Hello"</span> <span class="p">);</span>
+<span class="nx">assert</span><span class="p">(</span> <span class="nx">note</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">lang</span> <span class="o">==</span> <span class="s2">"en"</span> <span class="p">);</span>
+<span class="nx">assert</span><span class="p">(</span> <span class="nx">note</span><span class="p">.</span><span class="nx">hasChanged</span> <span class="p">);</span>
+<span class="nx">assert</span><span class="p">(</span> <span class="nx">note</span><span class="p">.</span><span class="nx">isValid</span> <span class="p">);</span>
+
+<span class="c1">// INTEGRATE</span>
+<span class="nx">note</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="s1">'change'</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">changes</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">changes</span><span class="p">.</span><span class="nx">title</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'note-title'</span><span class="p">).</span><span class="nx">innerHTML</span> <span class="o">=</span> <span class="nx">changes</span><span class="p">.</span><span class="nx">title</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="nx">note</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">title</span> <span class="o">=</span> <span class="s1">''</span><span class="p">;</span>
+<span class="nx">assert</span><span class="p">(</span> <span class="o">!</span><span class="nx">note</span><span class="p">.</span><span class="nx">isValid</span> <span class="p">);</span>
+<span class="nx">assert</span><span class="p">(</span> <span class="nx">note</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">title</span> <span class="o">==</span> <span class="nx">Model</span><span class="p">.</span><span class="nx">errCodes</span><span class="p">.</span><span class="nx">EMPTY</span> <span class="p">);</span>
+
+<span class="nx">note</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">title</span> <span class="o">=</span> <span class="s2">"Let's go!"</span><span class="p">;</span>
+
+<span class="c1">// Designed to be Django-style.</span>
+<span class="k">if</span> <span class="p">(</span><span class="nx">note</span><span class="p">.</span><span class="nx">isValid</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">note</span><span class="p">.</span><span class="nx">save</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="nx">assert</span><span class="p">(</span> <span class="o">!</span><span class="nx">note</span><span class="p">.</span><span class="nx">isNew</span> <span class="p">);</span>
+</pre></div>
+
+<p><em>And now, all these features in details.</em></p>
+
+<h2>Defining models (describing data)</h2>
+
+<p><code>new Model</code> receives two arguments and creates new model classes. These arguments are the name of the model class being created and the configuration function.</p>
+
+<p>Configuration functions are actually sugar that allows to configure classes in a fancy manner. Currently there's only <code>attr</code> method in configuration function context and it is used to define attributes.</p>
+
+<p><code>attr</code> may receive multiple arguments. The 1st argument should be string name of the attribute. That name may end with a plus sign which is used to mark attributes that should have value (namely, required attributes) or exclamation mark which indicates primary key (of course, primary key is required too). </p>
+
+<p>All following arguments should be <em>validators</em> for the attribute's value.</p>
+
+<h3>Validators</h3>
+
+<p>Validator is a simple function receiving value to validate and returning some string error code when value is invalid. It may also receive other arguments though. Validators defined on attributes are run when <code>instance.isValid</code> or <code>instance.errors</code> is called.</p>
+
+<div class="highlight"><pre><span class="kd">function</span> <span class="nx">minLength</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">minLen</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">value</span> <span class="o">===</span> <span class="s1">'string'</span> <span class="o">&amp;&amp;</span> <span class="nx">value</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;=</span> <span class="nx">minLen</span><span class="p">)</span> <span class="o">?</span> <span class="s1">'tooshort'</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>There is a number of predefined common validators in Model.js (<code>number</code>, <code>string</code>, <code>boolean</code>, <code>nonnull</code>, <code>nonempty</code> and <code>in</code>) so that when defining attributes on new models, you may just write their names.</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">Note</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Model</span><span class="p">(</span><span class="s1">'Note'</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">'id!'</span><span class="p">,</span> <span class="s1">'number'</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">'title'</span><span class="p">,</span> <span class="s1">'nonnull'</span><span class="p">,</span> <span class="s1">'string'</span><span class="p">,</span> <span class="s1">'nonempty'</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">'lang'</span><span class="p">,</span> <span class="s1">'nonnull'</span><span class="p">,</span> <span class="s1">'string'</span><span class="p">,</span> <span class="p">[</span> <span class="s1">'in'</span><span class="p">,</span> <span class="nx">ALLOWED_LANGUAGES</span> <span class="p">]);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">'text'</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">typeof</span> <span class="nx">value</span> <span class="o">===</span> <span class="s1">'string'</span><span class="p">;</span>
+  <span class="p">});</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>When you want to pass additional arguments to validator, like checking if <code>lang</code> value is one of the ALLOWED_LANGUAGES, add that validator to an attribute in an array form as in example above.</p>
+
+<p>Common reusable validators, such as mentioned <code>number</code>, <code>string</code> and other, may be registed with <code>Model.registerValidator</code> which received two arguments, the name and the function. </p>
+
+<div class="highlight"><pre><span class="nx">Model</span><span class="p">.</span><span class="nx">registerValidator</span><span class="p">(</span><span class="s1">'maxLen'</span><span class="p">,</span> <span class="kd">function</span> <span class="nx">maxLength</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">maxLen</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">value</span> <span class="o">===</span> <span class="s1">'string'</span> <span class="o">&amp;&amp;</span> <span class="nx">value</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;=</span> <span class="nx">minLen</span><span class="p">)</span> <span class="o">?</span> <span class="s1">'toolong'</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>To say, attribute names with a plus sign at the end are just shortcuts to avoid that long unpretty <em>'nonnull'</em> validator names. But you may still use <em>'nonnull'</em> if you like it more.</p>
+
+<h2>Working with data</h2>
+
+<h3>Instance</h3>
+
+<p>Instances are created with <code>new Note({…})</code> form and all instances tend to be persisted on creation. </p>
+
+<p>If you're creating absolutely new instance which is not yet persisted (e.g. from data taken right out of an HTML form) you should use <code>new Note(false, {…})</code> form where 1st argument is an explicit persistance flag. You may set it to <code>true</code>, but there's no need to do so as <code>new Note(true, {…})</code> actually produces same result as <code>new Note({…})</code>.</p>
+
+<p>Persisting on creation will fail silently when data provided has no PK { attrName: value} pair but a model class has a primary key defined.</p>
+
+<h3>Setters</h3>
+
+<p>There are two kinds of setters. There are those which trigger change event on instances and those which don't.</p>
+
+<div class="highlight"><pre><span class="c1">// These two setters trigger it</span>
+<span class="nx">note</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">title</span> <span class="o">=</span> <span class="s2">"Hi there"</span><span class="p">;</span>
+<span class="nx">note</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">title</span><span class="o">:</span> <span class="s2">"Hi there"</span><span class="p">,</span> <span class="nx">lang</span><span class="o">:</span> <span class="s2">"en"</span> <span class="p">};</span>
+
+<span class="c1">// … and these two don't.</span>
+<span class="nx">note</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">'title'</span><span class="p">,</span> <span class="s2">"Hi there"</span><span class="p">);</span>
+<span class="nx">note</span><span class="p">.</span><span class="nx">set</span><span class="p">({</span> <span class="nx">title</span><span class="o">:</span> <span class="s2">"Hi there"</span><span class="p">,</span> <span class="nx">lang</span><span class="o">:</span> <span class="s2">"en"</span> <span class="p">});</span>
+</pre></div>
+
+<h3>Getters</h3>
+
+<p><code>note.data.title</code> returns value of a single attribute.</p>
+
+<p><code>note.data.get('title', 'lang')</code> returns specific attributes' values in an object of { attrName: value } pairs.</p>
+
+<p>To get whole instace's data use <code>note.data()</code> or <code>note.get()</code>.</p>
+
+<h3>Changes</h3>
+
+<p><code>note.hasChanged</code> tells if instance data has been changed since its latest persisting.</p>
+
+<p><code>note.isNew</code> well yes, it tells if instance is new (has never been persisted).</p>
+
+<p><code>note.isPersisted</code> tells whether instance changes are persisted and there are no pending changes to persist.</p>
+
+<p><code>note._revert</code> is rolling back all changes made on instance data and triggers <code>revert</code> event that application may bind handlers on.</p>
+
+<p><code>note._persist()</code> is persisting changes made on instance data and triggers <code>persist</code> event. This method should be called right after application has made sure that data is persisted.</p>
+
+<p>To say, in web environment when persisting data with ajax, <code>_persist</code> should be called in success stage and <code>_revert</code> should be called if request fails.</p>
+
+<div class="highlight"><pre><span class="nx">Note</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">save</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">note</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+  <span class="k">return</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+    <span class="nx">type</span><span class="o">:</span> <span class="s1">'PUT'</span><span class="p">,</span>
+    <span class="nx">url</span><span class="o">:</span> <span class="s1">'/notes/'</span><span class="o">+</span><span class="nx">note</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
+    <span class="nx">data</span><span class="o">:</span> <span class="nx">note</span><span class="p">.</span><span class="nx">data</span><span class="p">(),</span>
+    <span class="nx">dataType</span><span class="o">:</span> <span class="s1">'json'</span>
+  <span class="p">}).</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">json</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">note</span><span class="p">.</span><span class="nx">_persist</span><span class="p">();</span>
+  <span class="p">}).</span><span class="nx">fail</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="nx">note</span><span class="p">.</span><span class="nx">_revert</span><span class="p">();</span>
+  <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+<h2>Events</h2>
+
+<p><code>initialize</code> is triggered on instance creation, right on <code>var note = new Note;</code>.</p>
+
+<p><code>change</code> is triggered every time attributes' values are changed like <code>note.data.title = "Hi"</code> or like <code>note.data = {…}</code>.</p>
+
+<p><code>change</code> is not triggered though when setting values on attributes with <code>set</code> method.</p>
+
+<p>Handlers bound to <code>change</code> event receive data object of changes made (see example below).</p>
+
+<p><code>persist</code> and <code>revert</code> are triggered when their corresponding methods are called.</p>
+
+<p>You may bind event handlers either on model classes so that they subsequently refer to all instances or on specific instances.</p>
+
+<div class="highlight"><pre><span class="nx">Note</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="s1">'initialize'</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">lang</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">'lang'</span><span class="p">,</span> <span class="s1">'en'</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="nx">note</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="s1">'change'</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">changes</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">changes</span><span class="p">.</span><span class="nx">title</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">'note-title'</span><span class="p">).</span><span class="nx">innerHTML</span> <span class="o">=</span> <span class="nx">changes</span><span class="p">.</span><span class="nx">title</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+</pre></div>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Model.js maintained by <a href="https://github.com/IronGroove">IronGroove</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
