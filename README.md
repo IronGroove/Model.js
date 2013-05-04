@@ -164,8 +164,6 @@ Note.prototype.save = function () {
     dataType: 'json'
   }).done(function (json) {
     note._persist();
-  }).fail(function () {
-    note._revert();
   });
 }
 ```
