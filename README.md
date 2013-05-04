@@ -152,7 +152,7 @@ To get whole instace's data use `note.data()` or `note.get()`.
 
 `note._persist()` is persisting changes made on instance data and triggers `persist` event. This method should be called right after application has made sure that data is persisted.
 
-To say, in web environment when persisting data with ajax, `_persist` should be called in success stage and `_revert` should be called if request fails.
+To say, in web environment when persisting data with ajax, `_persist` should be called in success stage and `_revert` may be called if request fails and it makes sense for the application.
 
 ```javascript
 Note.prototype.save = function () {
