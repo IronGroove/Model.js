@@ -65,7 +65,7 @@ assert( !note.isNew );
 
 Configuration functions are actually sugar that allows to configure classes in a fancy manner. Currently there's only `attr` method in configuration function context and it is used to define attributes.
 
-`attr` may receive multiple arguments. The 1st argument should be string name of the attribute. That name may end with a plus sign which is used to mark attributes that should have value (namely, required attributes) or exclamation mark which indicates primary key (of course, primary key is required too). 
+`attr` may receive multiple arguments. The 1st argument should be string name of the attribute. That name may end with a plus sign which is used to mark attributes that should have value (namely, required attributes) or exclamation mark which indicates primary key (of course, primary key is required too).
 
 All following arguments should be _validators_ for the attribute's value.
 
@@ -94,7 +94,7 @@ var Note = new Model('Note', function () {
 ```
 When you want to pass additional arguments to validator, like checking if `lang` value is one of the ALLOWED_LANGUAGES, add that validator to an attribute in an array form as in example above.
 
-Common reusable validators, such as mentioned `number`, `string` and other, may be registed with `Model.registerValidator` which received two arguments, the name and the function. 
+Common reusable validators, such as mentioned `number`, `string` and other, may be registed with `Model.registerValidator` which received two arguments, the name and the function.
 
 ```javascript
 Model.registerValidator('maxLen', function maxLength(value, maxLen) {
@@ -109,7 +109,7 @@ To say, attribute names with a plus sign at the end are just shortcuts to avoid 
 
 ### Instance
 
-Instances are created with `new Note({…})` form and all instances tend to be persisted on creation. 
+Instances are created with `new Note({…})` form and all instances tend to be persisted on creation.
 
 If you're creating absolutely new instance which is not yet persisted (e.g. from data taken right out of an HTML form) you should use `new Note(false, {…})` form where 1st argument is an explicit persistance flag. You may set it to `true`, but there's no need to do so as `new Note(true, {…})` actually produces same result as `new Note({…})`.
 
@@ -148,11 +148,11 @@ To get whole instace's data use `note.data()` or `note.get()`.
 
 `note.isPersisted` tells whether instance changes are persisted and there are no pending changes to persist.
 
-`note._revert` is rolling back all changes made on instance data and triggers `revert` event that application may bind handlers on.
+`note._revert()` is rolling back all changes made on instance data and triggers `revert` event that application may bind handlers on.
 
 `note._persist()` is persisting changes made on instance data and triggers `persist` event. This method should be called right after application has made sure that data is persisted.
 
-To say, in web environment when persisting data with ajax, `_persist` should be called in success stage and `_revert` may be called if request fails and it makes sense for the application.
+To say, in web environment when persisting data with ajax, `_persist` should be called in success stage and _revert` may be called if request fails and it makes sense for the application.
 
 ```javascript
 Note.prototype.save = function () {
