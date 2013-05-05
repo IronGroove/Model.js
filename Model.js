@@ -719,7 +719,7 @@ Model = (function () {
     }
   };
 
-  InstancePrototype._revert = function () {
+  InstancePrototype.revert = function () {
     if (this.hasChanged) {
       for (var attrName in this._changes) {
         if (this._changes[attrName] === undefined) {

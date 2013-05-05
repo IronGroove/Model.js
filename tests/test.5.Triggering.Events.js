@@ -73,7 +73,7 @@ function () {
   var note = new Note({ id: 123, title: "ABC" });
   note.data.title = "Some";
 
-  note._revert();
+  note.revert();
 
   ok( reverted );
 });
