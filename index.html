@@ -96,7 +96,7 @@
 
 <p>Configuration functions are actually sugar that allows to configure classes in a fancy manner. Currently there's only <code>attr</code> method in configuration function context and it is used to define attributes.</p>
 
-<p><code>attr</code> may receive multiple arguments. The 1st argument should be string name of the attribute. That name may end with a plus sign which is used to mark attributes that should have value (namely, required attributes) or exclamation mark which indicates primary key (of course, primary key is required too). </p>
+<p><code>attr</code> may receive multiple arguments. The 1st argument should be string name of the attribute. That name may end with a plus sign which is used to mark attributes that should have value (namely, required attributes) or exclamation mark which indicates primary key (of course, primary key is required too).</p>
 
 <p>All following arguments should be <em>validators</em> for the attribute's value.</p>
 
@@ -123,7 +123,7 @@
 
 <p>When you want to pass additional arguments to validator, like checking if <code>lang</code> value is one of the ALLOWED_LANGUAGES, add that validator to an attribute in an array form as in example above.</p>
 
-<p>Common reusable validators, such as mentioned <code>number</code>, <code>string</code> and other, may be registed with <code>Model.registerValidator</code> which received two arguments, the name and the function. </p>
+<p>Common reusable validators, such as mentioned <code>number</code>, <code>string</code> and other, may be registed with <code>Model.registerValidator</code> which received two arguments, the name and the function.</p>
 
 <div class="highlight"><pre><span class="nx">Model</span><span class="p">.</span><span class="nx">registerValidator</span><span class="p">(</span><span class="s1">'maxLen'</span><span class="p">,</span> <span class="kd">function</span> <span class="nx">maxLength</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">maxLen</span><span class="p">)</span> <span class="p">{</span>
   <span class="k">return</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">value</span> <span class="o">===</span> <span class="s1">'string'</span> <span class="o">&amp;&amp;</span> <span class="nx">value</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;=</span> <span class="nx">minLen</span><span class="p">)</span> <span class="o">?</span> <span class="s1">'toolong'</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
@@ -136,7 +136,7 @@
 
 <h3>Instance</h3>
 
-<p>Instances are created with <code>new Note({…})</code> form and all instances tend to be persisted on creation. </p>
+<p>Instances are created with <code>new Note({…})</code> form and all instances tend to be persisted on creation.</p>
 
 <p>If you're creating absolutely new instance which is not yet persisted (e.g. from data taken right out of an HTML form) you should use <code>new Note(false, {…})</code> form where 1st argument is an explicit persistance flag. You may set it to <code>true</code>, but there's no need to do so as <code>new Note(true, {…})</code> actually produces same result as <code>new Note({…})</code>.</p>
 
@@ -171,11 +171,11 @@
 
 <p><code>note.isPersisted</code> tells whether instance changes are persisted and there are no pending changes to persist.</p>
 
-<p><code>note._revert</code> is rolling back all changes made on instance data and triggers <code>revert</code> event that application may bind handlers on.</p>
+<p><code>note._revert()</code> is rolling back all changes made on instance data and triggers <code>revert</code> event that application may bind handlers on.</p>
 
 <p><code>note._persist()</code> is persisting changes made on instance data and triggers <code>persist</code> event. This method should be called right after application has made sure that data is persisted.</p>
 
-<p>To say, in web environment when persisting data with ajax, <code>_persist</code> should be called in success stage and <code>_revert</code> should be called if request fails.</p>
+<p>To say, in web environment when persisting data with ajax, <code>_persist</code> should be called in success stage and _revert` may be called if request fails and it makes sense for the application.</p>
 
 <div class="highlight"><pre><span class="nx">Note</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">save</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
   <span class="kd">var</span> <span class="nx">note</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
@@ -186,8 +186,6 @@
     <span class="nx">dataType</span><span class="o">:</span> <span class="s1">'json'</span>
   <span class="p">}).</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">json</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">note</span><span class="p">.</span><span class="nx">_persist</span><span class="p">();</span>
-  <span class="p">}).</span><span class="nx">fail</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
-    <span class="nx">note</span><span class="p">.</span><span class="nx">_revert</span><span class="p">();</span>
   <span class="p">});</span>
 <span class="p">}</span>
 </pre></div>
