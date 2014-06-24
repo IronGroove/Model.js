@@ -912,10 +912,15 @@ Model = (function () {
   // Expose private functions for testing.
   // Don't worry, next lines are removed in minimized production version.
 
-  if (window && window.MODEL_JS_TEST_MODE) {
-    Model.private = private;
-  }
+  try {
+    if (MODEL_JS_TEST_MODE) {
+      Model.private = private;
+    }
+  } catch(e) {}
 
   return Model;
 
 })();
+
+var u, module, cjs = module != u;
+(cjs ? module : window)[(cjs ? 'exports' : 'Model')] = Model;
